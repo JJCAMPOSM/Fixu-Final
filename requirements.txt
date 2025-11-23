@@ -1,0 +1,11 @@
+Flask==2.3.3
+Werkzeug==2.3.7
+SQLAlchemy==1.4.52
+Flask-SQLAlchemy==2.5.1
+Flask-Migrate==4.0.7
+Flask-WTF==1.1.1
+email-validator==2.1.0.post1
+Flask-Login==0.6.3
+python-dotenv==1.0.1
+gunicorn==21.2.0
+psycopg2-binary==2.9.9

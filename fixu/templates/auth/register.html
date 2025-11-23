@@ -1,0 +1,127 @@
+{% extends 'layouts/auth.html' %}
+{% block content %}
+<div class="card p-4 shadow auth-card">
+    <div class="text-center mb-3">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Fixu" class="logo-auth">
+        <div class="text-muted">Mesa de Ayuda</div>
+    </div>
+    <h1 class="h5 mb-3">Crear cuenta</h1>
+    <form method="post" novalidate id="registerForm">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            <label class="form-label required-field">{{ form.name.label }}</label>
+            {{ form.name(class='form-control', placeholder='Juan Pérez', required=True, minlength=2, maxlength=120,
+            id='name') }}
+            {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label required-field">{{ form.email.label }}</label>
+            {{ form.email(class='form-control', placeholder='correo@empresa.com', type='email', required=True,
+            maxlength=255, id='email') }}
+            {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            <div id="emailError" class="text-danger small" style="display: none;">Por favor ingresa un correo
+                electrónico válido.</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label required-field">{{ form.password.label }}</label>
+            {{ form.password(class='form-control', placeholder='••••••••', required=True, minlength=8, id='password') }}
+            {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            <div id="passwordError" class="text-danger small" style="display: none;"></div>
+            <div id="passwordRequirements" class="small text-muted mt-1">
+                La contraseña debe tener:
+                <ul class="mb-0 ps-3">
+                    <li id="req-length">Al menos 8 caracteres</li>
+                    <li id="req-number">Al menos 1 número</li>
+                    <li id="req-uppercase">Al menos 1 letra mayúscula</li>
+                </ul>
+            </div>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="showPasswordRegister">
+                <label class="form-check-label" for="showPasswordRegister">
+                    Mostrar contraseña
+                </label>
+            </div>
+        </div>
+        <div class="d-grid">
+            {{ form.submit(class='btn btn-primary', id='submitBtn') }}
+        </div>
+    </form>
+    <div class="mt-3 text-center">
+        <span class="text-muted">¿Ya tienes cuenta?</span>
+        <a href="{{ url_for('auth.login') }}" class="text-decoration-none">Inicia sesión</a>
+    </div>
+</div>
+<script>
+    const showPasswordRegister = document.getElementById('showPasswordRegister');
+    const passwordRegister = document.getElementById('password');
+    const emailInput = document.getElementById('email');
+    const registerForm = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Password visibility toggle
+    showPasswordRegister.addEventListener('change', function () {
+        passwordRegister.type = this.checked ? 'text' : 'password';
+    });
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    emailInput.addEventListener('blur', function () {
+        const emailError = document.getElementById('emailError');
+        if (!emailRegex.test(this.value)) {
+            emailError.style.display = 'block';
+            this.classList.add('is-invalid');
+        } else {
+            emailError.style.display = 'none';
+            this.classList.remove('is-invalid');
+        }
+    });
+
+    // Password strength validation
+    const reqLength = document.getElementById('req-length');
+    const reqNumber = document.getElementById('req-number');
+    const reqUppercase = document.getElementById('req-uppercase');
+
+    function validatePassword() {
+        const password = passwordRegister.value;
+        const hasLength = password.length >= 8;
+        const hasNumber = /\d/.test(password);
+        const hasUppercase = /[A-Z]/.test(password);
+
+        // Update visual feedback
+        reqLength.style.color = hasLength ? '#10B981' : '';
+        reqNumber.style.color = hasNumber ? '#10B981' : '';
+        reqUppercase.style.color = hasUppercase ? '#10B981' : '';
+
+        return hasLength && hasNumber && hasUppercase;
+    }
+
+    passwordRegister.addEventListener('input', validatePassword);
+
+    // Form submission validation
+    registerForm.addEventListener('submit', function (e) {
+        let isValid = true;
+
+        // Validate email
+        if (!emailRegex.test(emailInput.value)) {
+            e.preventDefault();
+            document.getElementById('emailError').style.display = 'block';
+            emailInput.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        // Validate password
+        if (!validatePassword()) {
+            e.preventDefault();
+            const passwordError = document.getElementById('passwordError');
+            passwordError.textContent = 'La contraseña no cumple con los requisitos mínimos de seguridad.';
+            passwordError.style.display = 'block';
+            passwordRegister.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            submitBtn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h1 class="h4 mb-0">Solicitantes</h1>
+  <div class="ms-auto">
+    <a class="btn btn-sm btn-primary" href="{{ url_for('requesters.create') }}">Nuevo solicitante</a>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Fecha de Creación</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in requesters %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.email }}</td>
+          <td>{{ r.phone or '—' }}</td>
+          <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('requesters.edit', req_id=r.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('requesters.delete', req_id=r.id) }}" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar este solicitante?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">No hay solicitantes.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav aria-label="Paginación">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}">Anterior</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Página {{ pagination.page }} de {{ pagination.pages or 1 }}</span></li>
+    {% if pagination.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}">Siguiente</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}

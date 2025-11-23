@@ -1,0 +1,56 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'Nueva Categoría' if mode=='create' else 'Editar Categoría' }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-light required-field">{{ form.name.label }}</label>
+                    {{ form.name(class='form-control', required=True, minlength=2, maxlength=120, placeholder='ej:
+                    Soporte
+                    Técnico') }}
+                    {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-light">{{ form.color.label }}</label>
+                    <div class="input-group">
+                        {{ form.color(class='form-control', type='color', value=form.color.data or '#6366f1') }}
+                        <input type="text" class="form-control" id="color-text"
+                            value="{{ form.color.data or '#6366f1' }}" readonly style="max-width: 100px;">
+                    </div>
+                    <div class="form-text text-muted small">Selecciona un color para identificar esta categoría</div>
+                    {% for e in form.color.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label text-light">{{ form.description.label }}</label>
+                    {{ form.description(class='form-control', rows=3, maxlength=500, placeholder='Descripción breve de
+                    esta
+                    categoría...') }}
+                    {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="mt-4">
+                {{ form.submit(class='btn btn-primary') }}
+                <a href="{{ url_for('categories.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Sincronizar el color picker con el text input
+    const colorInput = document.querySelector('input[name="color"]');
+    const colorText = document.getElementById('color-text');
+
+    if (colorInput && colorText) {
+        colorInput.addEventListener('input', function () {
+            colorText.value = this.value.toUpperCase();
+        });
+    }
+</script>
+{% endblock %}

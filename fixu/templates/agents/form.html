@@ -1,0 +1,83 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'Nuevo Agente' if mode=='create' else 'Editar Agente' }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-light required-field">{{ form.name.label }}</label>
+                    {{ form.name(class='form-control', required=True, minlength=2, maxlength=120, placeholder='Juan
+                    Pérez') }}
+                    {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-light required-field">{{ form.email.label }}</label>
+                    {{ form.email(class='form-control', required=True, type='email', placeholder='agente@empresa.com')
+                    }}
+                    {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-light">{{ form.password.label }}</label>
+                    {{ form.password(class='form-control', type='password', minlength=8, placeholder='••••••••',
+                    id='password-agent') }}
+                    {% if mode == 'edit' %}
+                    <div class="form-text text-muted small">Dejar en blanco para mantener la contraseña actual</div>
+                    {% endif %}
+                    {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="showPasswordAgent">
+                        <label class="form-check-label" for="showPasswordAgent">
+                            Mostrar contraseña
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-light">{{ form.password_confirm.label }}</label>
+                    {{ form.password_confirm(class='form-control', type='password', placeholder='••••••••',
+                    id='password-confirm-agent') }}
+                    {% for e in form.password_confirm.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="showPasswordConfirmAgent">
+                        <label class="form-check-label" for="showPasswordConfirmAgent">
+                            Mostrar contraseña
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {% if mode == 'create' %}
+            <div class="alert alert-info mt-3 border-0" style="background: rgba(37, 99, 235, 0.1);">
+                <small>
+                    <strong>Nota:</strong> El usuario se creará automáticamente con el rol de <strong>Agente</strong>.
+                    Podrás asignarlo a equipos desde el módulo de Equipos.
+                </small>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {{ form.submit(class='btn btn-primary') }}
+                <a href="{{ url_for('agents.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    const showPasswordAgent = document.getElementById('showPasswordAgent');
+    const passwordAgent = document.getElementById('password-agent');
+    const showPasswordConfirmAgent = document.getElementById('showPasswordConfirmAgent');
+    const passwordConfirmAgent = document.getElementById('password-confirm-agent');
+
+    showPasswordAgent.addEventListener('change', function () {
+        passwordAgent.type = this.checked ? 'text' : 'password';
+    });
+
+    showPasswordConfirmAgent.addEventListener('change', function () {
+        passwordConfirmAgent.type = this.checked ? 'text' : 'password';
+    });
+</script>
+{% endblock %}

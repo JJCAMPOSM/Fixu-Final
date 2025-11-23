@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(del update_db_schema.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

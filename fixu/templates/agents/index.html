@@ -1,0 +1,72 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0">Agentes</h1>
+  <div class="ms-auto">
+    <a class="btn btn-primary btn-lg shadow-sm" href="{{ url_for('agents.create') }}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus-circle me-2" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+      </svg>
+      Nuevo Agente
+    </a>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Equipos</th>
+        <th>Creado</th>
+        <th class="text-end">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for agent in agents %}
+        <tr>
+          <td class="text-light">{{ agent.name }}</td>
+          <td class="text-muted">{{ agent.email }}</td>
+          <td>
+            {% if agent.team_members %}
+              <span class="badge bg-primary">{{ agent.team_members|length }} equipo(s)</span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-muted">{{ agent.created_at.strftime('%Y-%m-%d') }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-light" href="{{ url_for('agents.edit', agent_id=agent.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('agents.delete', agent_id=agent.id) }}" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar este agente?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">No hay agentes registrados.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav aria-label="Paginación">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}">Anterior</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Página {{ pagination.page }} de {{ pagination.pages or 1 }}</span></li>
+    {% if pagination.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}">Siguiente</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}

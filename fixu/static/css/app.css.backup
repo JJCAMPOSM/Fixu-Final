@@ -1,0 +1,869 @@
+/* ========================================
+   FIXU DARK MODE - PROFESSIONAL DESIGN SYSTEM
+   ======================================== */
+
+/* 1. COLOR PALETTE - Dark Mode Foundation */
+:root {
+  /* Neutral Bases - Deep Professional Dark */
+  --fixu-bg: #0F172A;
+  /* Body/Sidebar - Deep night blue */
+  --fixu-surface: #1E293B;
+  /* Cards/Panels - Elevated surface */
+  --fixu-surface-hover: #2D3B4E;
+  /* Hover state for surfaces */
+  --fixu-border: #334155;
+  /* Borders/Dividers - Subtle */
+
+  /* Text Hierarchy */
+  --fixu-text: #F8FAFC;
+  /* Main text - Almost white */
+  --fixu-text-secondary: #94A3B8;
+  /* Labels, dates, placeholders */
+
+  /* Vibrant Accents - Identity Colors */
+  --fixu-primary: #0D92F4;
+  /* Electric Blue - Primary actions */
+  --fixu-primary-glow: #77CDFF;
+  /* Sky Blue - Secondary/Glow */
+  --fixu-danger: #C62E2E;
+  /* Brick Red - Critical/Errors */
+  --fixu-warning: #F95454;
+  /* Salmon Red - Warnings */
+
+  /* Derived Colors */
+  --fixu-primary-hover: #0B7FD6;
+  --fixu-primary-light: rgba(13, 146, 244, 0.15);
+  --fixu-success: #10B981;
+  --fixu-success-light: rgba(16, 185, 129, 0.15);
+}
+
+/* 2. BASE STYLES */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--fixu-bg);
+  color: var(--fixu-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Typography Hierarchy */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--fixu-text);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.75rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+h5 {
+  font-size: 1.125rem;
+}
+
+h6 {
+  font-size: 1rem;
+}
+
+/* Links */
+a {
+  color: var(--fixu-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--fixu-primary-glow);
+}
+
+/* 3. LAYOUT STRUCTURE */
+.fixu-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* 4. SIDEBAR - Left Navigation */
+.fixu-sidebar {
+  width: 260px;
+  flex: 0 0 260px;
+  background: var(--fixu-bg);
+  border-right: 1px solid var(--fixu-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.fixu-sidebar .brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--fixu-text);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Sidebar Menu Items */
+.fixu-sidebar .menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fixu-sidebar .menu a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: var(--fixu-text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.fixu-sidebar .menu a:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--fixu-text);
+}
+
+.fixu-sidebar .menu a.active {
+  background: var(--fixu-primary-light);
+  color: var(--fixu-primary-glow);
+  font-weight: 600;
+}
+
+.fixu-sidebar .menu a.active span:first-child {
+  filter: brightness(1.2);
+}
+
+/* Sidebar Footer */
+.fixu-sidebar .mt-auto {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--fixu-border);
+}
+
+/* 5. MAIN CONTENT AREA */
+.fixu-content {
+  flex: 1;
+  padding: 2rem;
+  background: var(--fixu-bg);
+  overflow-y: auto;
+}
+
+/* 6. CARDS & SURFACES */
+.card {
+  background: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  color: var(--fixu-text);
+  margin-bottom: 1.5rem;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--fixu-border);
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px 12px 0 0;
+}
+
+/* 7. FORMS & INPUTS */
+.form-label {
+  color: var(--fixu-text-secondary);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-control,
+.form-select {
+  background-color: var(--fixu-bg);
+  border: 1px solid var(--fixu-border);
+  border-radius: 8px;
+  color: var(--fixu-text);
+  padding: 0.75rem 1rem;
+  border-color: var(--fixu-primary);
+  color: var(--fixu-text);
+  box-shadow: 0 0 0 3px var(--fixu-primary-light);
+  outline: none;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  background-color: rgba(51, 65, 85, 0.3);
+  color: var(--fixu-text-secondary);
+  cursor: not-allowed;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Form Check (Checkboxes/Radio) */
+.form-check-input {
+  background-color: var(--fixu-bg);
+  border: 1px solid var(--fixu-border);
+}
+
+.form-check-input:checked {
+  background-color: var(--fixu-primary);
+  border-color: var(--fixu-primary);
+}
+
+.form-check-label {
+  color: var(--fixu-text-secondary);
+  margin-left: 0.5rem;
+}
+
+/* 8. BUTTONS - Visual Hierarchy */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+/* Primary Button - Most Important Action */
+.btn-primary {
+  background: var(--fixu-primary);
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(13, 146, 244, 0.3);
+}
+
+.btn-primary:hover {
+  background: var(--fixu-primary-hover);
+  box-shadow: 0 4px 8px rgba(13, 146, 244, 0.4);
+  transform: translateY(-1px);
+  color: #FFFFFF;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button - Outlined */
+.btn-secondary,
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--fixu-primary);
+  color: var(--fixu-primary);
+}
+
+.btn-secondary:hover,
+.btn-outline-primary:hover {
+  background: var(--fixu-primary-light);
+  color: var(--fixu-primary-glow);
+}
+
+/* Tertiary/Ghost Button - Minimal */
+.btn-outline-light,
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--fixu-text-secondary);
+  padding: 0.5rem 1rem;
+}
+
+.btn-outline-light:hover,
+.btn-link:hover {
+  color: var(--fixu-text);
+  background: rgba(148, 163, 184, 0.1);
+}
+
+/* Danger Button */
+.btn-danger,
+.btn-outline-danger {
+  background: var(--fixu-danger);
+  color: #FFFFFF;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #A82525;
+  color: #FFFFFF;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid var(--fixu-danger);
+  color: var(--fixu-danger);
+}
+
+.btn-outline-danger:hover {
+  background: rgba(198, 46, 46, 0.15);
+}
+
+/* Small Buttons */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* 9. ALERTS */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-success {
+  background-color: var(--fixu-success-light);
+  color: var(--fixu-success);
+  border-color: var(--fixu-success);
+}
+
+.alert-info {
+  background-color: rgba(119, 205, 255, 0.15);
+  color: var(--fixu-primary-glow);
+  border-color: var(--fixu-primary-glow);
+}
+
+.alert-warning {
+  background-color: rgba(249, 84, 84, 0.15);
+  color: var(--fixu-warning);
+  border-color: var(--fixu-warning);
+}
+
+.alert-danger {
+  background-color: rgba(198, 46, 46, 0.15);
+  color: var(--fixu-danger);
+  border-color: var(--fixu-danger);
+}
+
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+  opacity: 0.6;
+}
+
+.btn-close:hover {
+  opacity: 1;
+}
+
+/* 10. TABLES */
+.table {
+  color: var(--fixu-text);
+  border-color: var(--fixu-border);
+  width: 100%;
+}
+
+.table> :not(caption)>*>* {
+  background-color: transparent;
+  color: var(--fixu-text);
+  border-bottom-color: var(--fixu-border);
+  padding: 1rem;
+}
+
+.table thead th {
+  color: var(--fixu-text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--fixu-border);
+}
+
+.table-hover>tbody>tr:hover>* {
+  background-color: rgba(148, 163, 184, 0.05);
+  color: var(--fixu-text);
+}
+
+/* 11. BADGES & STATUS INDICATORS */
+.badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.badge-primary {
+  background: var(--fixu-primary-light);
+  color: var(--fixu-primary);
+}
+
+.badge-success {
+  background: var(--fixu-success-light);
+  color: var(--fixu-success);
+}
+
+.badge-danger {
+  background: rgba(198, 46, 46, 0.15);
+  color: var(--fixu-danger);
+}
+
+.badge-warning {
+  background: rgba(249, 84, 84, 0.15);
+  color: var(--fixu-warning);
+}
+
+/* 12. DROPDOWNS */
+.dropdown-menu {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  color: var(--fixu-text);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--fixu-primary-light);
+  color: var(--fixu-primary-glow);
+}
+
+/* 13. MODALS */
+.modal-content {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  border-radius: 12px;
+  color: var(--fixu-text);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--fixu-border);
+}
+
+.modal-header {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.modal-title {
+  color: var(--fixu-text);
+}
+
+/* 14. PAGINATION */
+.page-link {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  color: var(--fixu-text);
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.page-link:hover {
+  background-color: var(--fixu-primary-light);
+  border-color: var(--fixu-primary);
+  color: var(--fixu-primary-glow);
+}
+
+.page-item.disabled .page-link {
+  background-color: var(--fixu-bg);
+  border-color: var(--fixu-border);
+  color: var(--fixu-text-secondary);
+  opacity: 0.5;
+}
+
+.page-item.active .page-link {
+  background-color: var(--fixu-primary);
+  border-color: var(--fixu-primary);
+  color: #FFFFFF;
+}
+
+/* 15. AUTH PAGES */
+.auth-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--fixu-bg);
+}
+
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+}
+
+.auth-card .card {
+  background: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+}
+
+/* 16. UTILITY CLASSES */
+.text-muted {
+  color: var(--fixu-text-secondary) !important;
+}
+
+.text-primary {
+  color: var(--fixu-primary) !important;
+}
+
+.text-danger {
+  color: var(--fixu-danger) !important;
+}
+
+.text-success {
+  color: var(--fixu-success) !important;
+}
+
+.text-warning {
+  color: var(--fixu-warning) !important;
+}
+
+.bg-primary {
+  background-color: var(--fixu-primary) !important;
+}
+
+.bg-surface {
+  background-color: var(--fixu-surface) !important;
+}
+
+/* 17. LOGO STYLES */
+.logo-auth {
+  max-width: 150px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+.logo-sidebar {
+  max-width: 120px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* 18. REQUIRED FIELD INDICATOR */
+.required-field::after {
+  content: " *";
+  color: var(--fixu-danger);
+  font-weight: bold;
+}
+
+/* 19. CUSTOM SCROLLBAR */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fixu-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fixu-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fixu-text-secondary);
+}
+
+/* 20. RESPONSIVE ADJUSTMENTS */
+@media (max-width: 768px) {
+  .fixu-sidebar {
+    width: 100%;
+    flex: 0 0 100%;
+    height: auto;
+    position: relative;
+  }
+
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.badge-primary {
+  background: var(--fixu-primary-light);
+  color: var(--fixu-primary);
+}
+
+.badge-success {
+  background: var(--fixu-success-light);
+  color: var(--fixu-success);
+}
+
+.badge-danger {
+  background: rgba(198, 46, 46, 0.15);
+  color: var(--fixu-danger);
+}
+
+.badge-warning {
+  background: rgba(249, 84, 84, 0.15);
+  color: var(--fixu-warning);
+}
+
+/* 12. DROPDOWNS */
+.dropdown-menu {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  color: var(--fixu-text);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--fixu-primary-light);
+  color: var(--fixu-primary-glow);
+}
+
+/* 13. MODALS */
+.modal-content {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  border-radius: 12px;
+  color: var(--fixu-text);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--fixu-border);
+}
+
+.modal-header {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.modal-title {
+  color: var(--fixu-text);
+}
+
+/* 14. PAGINATION */
+.page-link {
+  background-color: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+  color: var(--fixu-text);
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.page-link:hover {
+  background-color: var(--fixu-primary-light);
+  border-color: var(--fixu-primary);
+  color: var(--fixu-primary-glow);
+}
+
+.page-item.disabled .page-link {
+  background-color: var(--fixu-bg);
+  border-color: var(--fixu-border);
+  color: var(--fixu-text-secondary);
+  opacity: 0.5;
+}
+
+.page-item.active .page-link {
+  background-color: var(--fixu-primary);
+  border-color: var(--fixu-primary);
+  color: #FFFFFF;
+}
+
+/* 15. AUTH PAGES */
+.auth-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--fixu-bg);
+}
+
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+}
+
+.auth-card .card {
+  background: var(--fixu-surface);
+  border: 1px solid var(--fixu-border);
+}
+
+/* 16. UTILITY CLASSES */
+.text-muted {
+  color: var(--fixu-text-secondary) !important;
+}
+
+.text-primary {
+  color: var(--fixu-primary) !important;
+}
+
+.text-danger {
+  color: var(--fixu-danger) !important;
+}
+
+.text-success {
+  color: var(--fixu-success) !important;
+}
+
+.text-warning {
+  color: var(--fixu-warning) !important;
+}
+
+.bg-primary {
+  background-color: var(--fixu-primary) !important;
+}
+
+.bg-surface {
+  background-color: var(--fixu-surface) !important;
+}
+
+/* 17. LOGO STYLES */
+.logo-auth {
+  max-width: 150px;
+  height: auto;
+  margin-bottom: 1rem;
+}
+
+.logo-sidebar {
+  max-width: 120px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* 18. REQUIRED FIELD INDICATOR */
+.required-field::after {
+  content: " *";
+  color: var(--fixu-danger);
+  font-weight: bold;
+}
+
+/* 19. CUSTOM SCROLLBAR */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fixu-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fixu-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fixu-text-secondary);
+}
+
+/* 20. RESPONSIVE ADJUSTMENTS */
+@media (max-width: 768px) {
+  .fixu-sidebar {
+    width: 100%;
+    flex: 0 0 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .fixu-layout {
+    flex-direction: column;
+  }
+
+  .fixu-content {
+    padding: 1rem;
+  }
+}
+
+/* ========================================
+   21. UX POLISH - GLOBAL IMPROVEMENTS
+   ======================================== */
+
+/* OBJETIVO 1: Normalización Global de Placeholders */
+.form-control::placeholder,
+.form-select::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--fixu-text-secondary) !important;
+  opacity: 0.6 !important;
+  text-align: left !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  white-space: normal !important;
+  font-style: normal !important;
+  text-transform: none !important;
+}
+
+/* OBJETIVO 2: Contadores de Caracteres */
+.char-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--fixu-text-secondary);
+  margin-top: 0.25rem;
+  opacity: 0.8;
+  transition: color 0.2s ease;
+}
+
+.char-counter.over-limit {
+  color: var(--fixu-danger);
+  font-weight: 600;
+}
+
+/* Wrapper para inputs con contador */
+.input-with-counter {
+  position: relative;
+}
+
+.input-with-counter .form-control,
+.input-with-counter textarea {
+  margin-bottom: 0;
+}

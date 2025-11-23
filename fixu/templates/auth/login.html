@@ -1,0 +1,48 @@
+{% extends 'layouts/auth.html' %}
+{% block content %}
+<div class="card p-4 shadow auth-card">
+  <div class="text-center mb-3">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Fixu" class="logo-auth">
+    <div class="text-muted">Mesa de Ayuda</div>
+  </div>
+  <h1 class="h5 mb-3">Inicia sesión</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      <label class="form-label required-field">{{ form.email.label }}</label>
+      {{ form.email(class='form-control', placeholder='correo@empresa.com', type='text', required=True) }}
+      {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label required-field">{{ form.password.label }}</label>
+      {{ form.password(class='form-control', placeholder='••••••••', required=True, minlength=6, id='password-login') }}
+      {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="showPasswordLogin">
+        <label class="form-check-label" for="showPasswordLogin">
+          Mostrar contraseña
+        </label>
+      </div>
+    </div>
+    <div class="form-check mb-3">
+      {{ form.remember(class='form-check-input', id='remember') }}
+      <label class="form-check-label" for="remember">Recordarme</label>
+    </div>
+    <div class="d-grid">
+      {{ form.submit(class='btn btn-primary') }}
+    </div>
+  </form>
+  <div class="mt-3 text-center">
+    <span class="text-muted">¿No tienes cuenta?</span>
+    <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Crear cuenta</a>
+  </div>
+</div>
+<script>
+  const showPasswordLogin = document.getElementById('showPasswordLogin');
+  const passwordLogin = document.getElementById('password-login');
+
+  showPasswordLogin.addEventListener('change', function () {
+    passwordLogin.type = this.checked ? 'text' : 'password';
+  });
+</script>
+{% endblock %}

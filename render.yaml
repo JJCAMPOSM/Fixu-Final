@@ -1,0 +1,23 @@
+databases:
+  - name: fixu-db
+    databaseName: fixu
+    user: fixu_user
+    plan: free
+
+services:
+  - type: web
+    name: fixu-app
+    env: python
+    buildCommand: pip install -r requirements.txt && flask db upgrade
+    startCommand: gunicorn "fixu:create_app()"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SQLALCHEMY_DATABASE_URI
+        fromDatabase:
+          name: fixu-db
+          property: connectionString
+      - key: FLASK_APP
+        value: fixu

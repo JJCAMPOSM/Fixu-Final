@@ -1,0 +1,176 @@
+{% extends 'layouts/app.html' %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <h1 class="h4 mb-0">{{ ticket.title }}</h1>
+    <div class="ms-auto">
+        {% if current_user.role in ['admin','agent'] %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}">Editar</a>
+        {% endif %}
+        <a class="btn btn-sm btn-secondary" href="{{ url_for('tickets.index') }}">Volver</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-2 text-light small">Creado: {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="mb-3 text-light">{{ ticket.body|e }}</div>
+                <dl class="row mb-0">
+                    <dt class="col-4 col-md-3 text-light">Estado</dt>
+                    <dd class="col-8 col-md-9 text-capitalize text-light">{{ ticket.status }}</dd>
+                    <dt class="col-4 col-md-3 text-light">Prioridad</dt>
+                    <dd class="col-8 col-md-9 text-capitalize text-light">{{ ticket.priority }}</dd>
+                    <dt class="col-4 col-md-3 text-light">Equipo</dt>
+                    <dd class="col-8 col-md-9 text-light">{{ ticket.team.name if ticket.team else '—' }}</dd>
+                    <dt class="col-4 col-md-3 text-light">Asignado</dt>
+                    <dd class="col-8 col-md-9 text-light">{{ ticket.assignee.user.name if ticket.assignee else '—' }}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <h2 class="h5 mt-4">Comentarios</h2>
+        <div class="vstack gap-3">
+            {% for c in ticket.comments %}
+            {% if c.private and current_user.role not in ['admin','agent'] %}
+            {# ocultar privados a solicitantes #}
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2 small text-light">
+                        <strong class="me-2">{{ c.team_member.user.name }}</strong>
+                        <span>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        {% if c.private %}<span class="badge bg-secondary ms-2">Privado</span>{% endif %}
+                    </div>
+                    <div class="text-light">{{ c.body|e }}</div>
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-muted">Aún no hay comentarios.</div>
+            {% endfor %}
+        </div>
+
+        {% if current_user.role in ['admin','agent'] %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6">Agregar comentario</h3>
+                <form method="post" action="{{ url_for('tickets.add_comment', ticket_id=ticket.id) }}" novalidate>
+                    {{ comment_form.hidden_tag() }}
+                    <div class="mb-2">
+                        {{ comment_form.body(class='form-control', rows=3, required=True, minlength=1) }}
+                        {% for e in comment_form.body.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="form-check mb-2">
+                        {{ comment_form.private(class='form-check-input', id='privateChk') }}
+                        <label for="privateChk" class="form-check-label">Privado (visible solo a agentes y
+                            admins)</label>
+                    </div>
+                    {{ comment_form.submit(class='btn btn-primary btn-sm') }}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Botón de feedback - Solo visible para tickets cerrados y usuarios con rol 'requester' -->
+        {% if ticket.status == 'closed' and current_user.role == 'requester' %}
+        <div class="card mb-3">
+            <div class="card-body text-center">
+                <h3 class="h6">¿Cómo calificarías la atención recibida?</h3>
+                {% if has_feedback %}
+                <button type="button" class="btn btn-secondary" id="feedbackButton" disabled>Feedback enviado</button>
+                {% else %}
+                <button type="button" class="btn btn-primary" id="feedbackButton" data-bs-toggle="modal"
+                    data-bs-target="#feedbackModal" data-ticket-id="{{ ticket.id }}">
+                    Enviar Feedback
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-body">
+                <h3 class="h6">Solicitante</h3>
+                <div class="text-light">{{ ticket.requester.name }}</div>
+                <div class="text-light small">{{ ticket.requester.email }}</div>
+                {% if ticket.requester.phone %}
+                <div class="text-light small">{{ ticket.requester.phone }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6">Historial</h3>
+                <ul class="list-unstyled small mb-0 text-light">
+                    {% for e in ticket.events %}
+                    <li>• {{ e.created_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.body }}</li>
+                    {% else %}
+                    <li class="text-muted">Sin eventos.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Feedback -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title text-dark" id="feedbackModalLabel">Calificar Atención</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="feedbackForm">
+                <div class="modal-body bg-white text-dark">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark d-block text-center">¿Cómo calificarías la atención
+                            recibida?</label>
+                        <div class="rating-circles d-flex justify-content-center gap-2 mb-2" style="font-size: 2rem;">
+                            <div class="rating-circle" data-value="1"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e4e5e9; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                1</div>
+                            <div class="rating-circle" data-value="2"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e4e5e9; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                2</div>
+                            <div class="rating-circle" data-value="3"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e4e5e9; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                3</div>
+                            <div class="rating-circle" data-value="4"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e4e5e9; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                4</div>
+                            <div class="rating-circle" data-value="5"
+                                style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e4e5e9; cursor: pointer; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                5</div>
+                            <input type="hidden" name="rating" id="rating" value="0" required>
+                        </div>
+                        <div class="d-flex justify-content-between w-75 mx-auto mt-1">
+                            <small class="text-muted">Mala</small>
+                            <small class="text-muted">Excelente</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label fw-bold text-dark">Comentario (opcional)</label>
+                        <textarea class="form-control border-secondary" id="comentario" name="comentario" rows="3"
+                            placeholder="Escribe tu comentario aquí..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Enviar Feedback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

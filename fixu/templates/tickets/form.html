@@ -1,0 +1,135 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'Nuevo ticket' if mode=='create' else 'Editar ticket' }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                <label class="form-label required-field">{{ form.title.label }}</label>
+                {{ form.title(class='form-control', required=True, minlength=3, maxlength=200) }}
+                {% for e in form.title.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label required-field">{{ form.body.label }}</label>
+                {% if current_user.role == 'requester' %}
+                {{ form.body(class='form-control', required=True, minlength=10, rows=5, placeholder='Describe el
+                problema detalladamente. Por favor especifica el aula donde se presentó el problema.') }}
+                {% else %}
+                {{ form.body(class='form-control', required=True, minlength=10, rows=5) }}
+                {% endif %}
+                {% for e in form.body.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            {% if current_user.role in ['admin', 'agent'] %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.requester_id.label }}</label>
+                    {{ form.requester_id(class='form-select') }}
+                    {% for e in form.requester_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.category_id.label }}</label>
+                    {{ form.category_id(class='form-select') }}
+                    {% for e in form.category_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.team_id.label }}</label>
+                    {{ form.team_id(class='form-select', id='team-select') }}
+                    {% for e in form.team_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.assignee_team_member_id.label }}</label>
+                    {{ form.assignee_team_member_id(class='form-select', id='assignee-select') }}
+                    {% for e in form.assignee_team_member_id.errors %}<div class="text-danger small">{{ e }}</div>{%
+                    endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.status.label }}</label>
+                    {{ form.status(class='form-select') }}
+                    {% for e in form.status.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.priority.label }}</label>
+                    {{ form.priority(class='form-select') }}
+                    {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {{ form.submit(class='btn btn-primary') }}
+                <a href="{{ url_for('tickets.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if current_user.role in ['admin', 'agent'] %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const teamSelect = document.getElementById('team-select');
+        const assigneeSelect = document.getElementById('assignee-select');
+
+        if (!teamSelect || !assigneeSelect) return;
+
+        // Store the current assignee value to preserve it if possible
+        const currentAssigneeId = assigneeSelect.value;
+
+        teamSelect.addEventListener('change', function () {
+            const teamId = this.value;
+
+            // Clear current options except "Ninguno"
+            assigneeSelect.innerHTML = '<option value="0">— Ninguno —</option>';
+
+            if (!teamId || teamId === '0') {
+                // No team selected, disable assignee dropdown
+                assigneeSelect.disabled = true;
+                return;
+            }
+
+            // Enable assignee dropdown
+            assigneeSelect.disabled = false;
+
+            // Fetch team members from API
+            fetch(`/teams/${teamId}/members/api`)
+                .then(response => response.json())
+                .then(members => {
+                    members.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member.id;
+                        option.textContent = `${member.name} (${member.team_name})`;
+
+                        // Preserve selection if the member is in the new team
+                        if (member.id == currentAssigneeId) {
+                            option.selected = true;
+                        }
+
+                        assigneeSelect.appendChild(option);
+                    });
+
+                    if (members.length === 0) {
+                        assigneeSelect.innerHTML = '<option value="0">— Sin miembros —</option>';
+                        assigneeSelect.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching team members:', error);
+                    assigneeSelect.innerHTML = '<option value="0">— Error al cargar —</option>';
+                    assigneeSelect.disabled = true;
+                });
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

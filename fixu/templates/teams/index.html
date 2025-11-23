@@ -1,0 +1,85 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h1 class="h4 mb-0">Equipos</h1>
+  <div class="ms-auto">
+    {% if current_user.role == 'admin' %}
+      <a class="btn btn-sm btn-primary" href="{{ url_for('teams.create') }}">Nuevo equipo</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  {% for team in teams %}
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <h2 class="h6 mb-0 text-light">{{ team.name }}</h2>
+            {% if current_user.role == 'admin' %}
+              <div class="ms-auto">
+                <a class="btn btn-sm btn-outline-light" href="{{ url_for('teams.edit', team_id=team.id) }}">Editar</a>
+                <form method="post" action="{{ url_for('teams.delete', team_id=team.id) }}" style="display:inline;" onsubmit="return confirm('¿Está seguro de eliminar este equipo?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+          <div class="mb-2 text-light"><strong>Miembros:</strong></div>
+          <ul class="mb-3 list-unstyled">
+            {% for m in team.members %}
+              <li class="d-flex align-items-center mb-1 text-light">
+                <span>{{ m.user.name }} &lt;{{ m.user.email }}&gt;</span>
+                {% if current_user.role == 'admin' %}
+                  <form method="post" action="{{ url_for('teams.remove_member', team_id=team.id, member_id=m.id) }}" style="display:inline;" class="ms-2" onsubmit="return confirm('¿Remover este miembro del equipo?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1">×</button>
+                  </form>
+                {% endif %}
+              </li>
+            {% else %}
+              <li class="text-muted">Sin miembros.</li>
+            {% endfor %}
+          </ul>
+
+          {% if current_user.role == 'admin' %}
+            <form method="post" action="{{ url_for('teams.add_member', team_id=team.id) }}" class="row g-2 align-items-end">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <div class="col-8">
+                <label class="form-label text-light">Agregar agente</label>
+                <select class="form-select" name="user_id">
+                  {% for a in agents %}
+                    <option value="{{ a.id }}">{{ a.name }} &lt;{{ a.email }}&gt;</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-4">
+                <button class="btn btn-primary w-100">Agregar</button>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="col-12 text-muted">No hay equipos.</div>
+  {% endfor %}
+</div>
+
+<nav aria-label="Paginación">
+  <ul class="pagination">
+    {% if pagination.has_prev %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}">Anterior</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Página {{ pagination.page }} de {{ pagination.pages or 1 }}</span></li>
+    {% if pagination.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}">Siguiente</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}

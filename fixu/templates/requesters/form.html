@@ -1,0 +1,35 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ 'Nuevo solicitante' if mode=='create' else 'Editar solicitante' }}</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label required-field">{{ form.name.label }}</label>
+                    {{ form.name(class='form-control', required=True, minlength=2, maxlength=120) }}
+                    {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label required-field">{{ form.email.label }}</label>
+                    {{ form.email(class='form-control', required=True, type='email', maxlength=255) }}
+                    {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.phone.label }}</label>
+                    {{ form.phone(class='form-control', placeholder='(123) 456-7890') }}
+                    {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="mt-4">
+                {{ form.submit(class='btn btn-primary') }}
+                <a href="{{ url_for('requesters.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

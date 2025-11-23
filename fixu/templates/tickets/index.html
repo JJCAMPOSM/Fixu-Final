@@ -1,0 +1,158 @@
+{% extends 'layouts/app.html' %}
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+    <h1 class="h3 mb-0">Tickets</h1>
+    <div class="ms-auto">
+        {% if current_user.role in ['admin','agent','requester'] %}
+        <a class="btn btn-primary btn-lg shadow-sm" href="{{ url_for('tickets.create') }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                class="bi bi-plus-circle me-2" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                <path
+                    d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+            </svg>
+            Nuevo Ticket
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if current_user.role in ['admin', 'agent'] %}
+<form class="row g-2 align-items-end mb-3" method="get">
+    <div class="col-6 col-md-3">
+        <label class="form-label">Estado</label>
+        <select name="status" class="form-select">
+            <option value="">Todos</option>
+            {% for val, lbl in [('open','Abierto'), ('pending','Pendiente'), ('solved','Resuelto'),
+            ('closed','Cerrado')] %}
+            <option value="{{ val }}" {% if request.args.get('status')==val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label">Prioridad</label>
+        <select name="priority" class="form-select">
+            <option value="">Todas</option>
+            {% for val, lbl in [('low','Baja'), ('medium','Media'), ('high','Alta')] %}
+            <option value="{{ val }}" {% if request.args.get('priority')==val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label">Equipo</label>
+        <select name="team_id" id="filter-team" class="form-select">
+            <option value="">Todos</option>
+            {% for t in teams %}
+            <option value="{{ t.id }}" {% if request.args.get('team_id')|int==t.id %}selected{% endif %}>{{ t.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-3">
+        <label class="form-label">Asignado</label>
+        <select name="assignee_id" id="filter-assignee" class="form-select">
+            <option value="">Todos</option>
+        </select>
+    </div>
+    <div class="col-12 col-md-2">
+        <button class="btn btn-secondary w-100">Filtrar</button>
+    </div>
+</form>
+{% endif %}
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Título</th>
+                {% if current_user.role in ['admin', 'agent'] %}
+                <th>Prioridad</th>
+                {% endif %}
+                <th>Estado</th>
+                <th>Equipo</th>
+                <th>Asignado</th>
+                <th>Solicitante</th>
+                <th>Creado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tickets %}
+            <tr>
+                <td><a href="{{ url_for('tickets.show', ticket_id=t.id) }}" class="text-decoration-none">{{ t.title
+                        }}</a></td>
+                {% if current_user.role in ['admin', 'agent'] %}
+                <td class="text-capitalize">{{ t.priority }}</td>
+                {% endif %}
+                <td class="text-capitalize">{{ t.status }}</td>
+                <td>{{ t.team.name if t.team else '—' }}</td>
+                <td>{{ t.assignee.user.name if t.assignee else '—' }}</td>
+                <td>{{ t.requester.name }}</td>
+                <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="{% if current_user.role in ['admin', 'agent'] %}7{% else %}6{% endif %}"
+                    class="text-center text-muted">No hay tickets.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<nav aria-label="Paginación">
+    <ul class="pagination">
+        {% set query_params = [] %}
+        {% if request.args.get('status') %}{% set _ = query_params.append('status=' + request.args.get('status')) %}{%
+        endif
+        %}
+        {% if request.args.get('priority') %}{% set _ = query_params.append('priority=' + request.args.get('priority'))
+        %}{%
+        endif %}
+        {% if request.args.get('team_id') %}{% set _ = query_params.append('team_id=' + request.args.get('team_id'))
+        %}{%
+        endif %}
+        {% if request.args.get('assignee_id') %}{% set _ = query_params.append('assignee_id=' +
+        request.args.get('assignee_id')) %}{% endif %}
+        {% set query_string = '&' + query_params|join('&') if query_params else '' %}
+        {% if pagination.has_prev %}
+        <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}{{ query_string }}">Anterior</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ pagination.page }} de {{ pagination.pages or 1
+                }}</span></li>
+        {% if pagination.has_next %}
+        <li class="page-item"><a class="page-link"
+                href="?page={{ pagination.next_num }}{{ query_string }}">Siguiente</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if current_user.role in ['admin', 'agent'] %}
+<script>
+    async function loadAssignees(teamId) {
+        const sel = document.getElementById('filter-assignee');
+        sel.innerHTML = '<option value="">Todos</option>';
+        if (!teamId) return;
+        const res = await fetch(`/api/teams/${teamId}/members`);
+        if (!res.ok) return;
+        const data = await res.json();
+        for (const m of data) {
+            const opt = document.createElement('option');
+            opt.value = m.id; opt.textContent = m.name;
+            sel.appendChild(opt);
+        }
+    }
+    const filterTeam = document.getElementById('filter-team');
+    const currentTeam = filterTeam ? filterTeam.value : '';
+    if (currentTeam) loadAssignees(currentTeam);
+    if (filterTeam) {
+        filterTeam.addEventListener('change', (e) => loadAssignees(e.target.value));
+    }
+</script>
+{% endif %}
+{% endblock %}
