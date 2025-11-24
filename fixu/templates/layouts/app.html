@@ -12,8 +12,52 @@
 </head>
 
 <body>
+  <!-- Mobile Navbar (Visible only on mobile) -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-lg-none mb-3">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Fixu" height="30"
+          class="d-inline-block align-text-top">
+        Fixu
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu"
+        aria-controls="mobileMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mobileMenu">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if current_user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('tickets.index') }}">🎫 Tickets</a>
+          </li>
+          {% if current_user.role == 'admin' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('categories.index') }}">🏷️ Categorías</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('requesters.index') }}">👤 Solicitantes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('agents.index') }}">👨‍💼 Agentes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('teams.index') }}">👥 Equipos</a>
+          </li>
+          {% endif %}
+          <li class="nav-item border-top mt-2 pt-2">
+            <span class="navbar-text d-block mb-1">{{ current_user.name }} ({{ current_user.role }})</span>
+            <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+          </li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Ingresar</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
   <div class="fixu-layout">
-    <aside class="fixu-sidebar d-flex flex-column">
+    <aside class="fixu-sidebar d-none d-lg-flex flex-column">
       <div class="brand mb-4">
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Fixu" class="logo-sidebar">
       </div>
