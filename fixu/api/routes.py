@@ -74,3 +74,11 @@ def submit_feedback(ticket_id: int):
         'message': 'Feedback enviado correctamente',
         'feedback_id': feedback.id
     }), 201
+
+
+@bp.get('/tickets/check-updates')
+def check_updates():
+    """Retorna el ID del último ticket creado para polling"""
+    last_ticket = Ticket.query.order_by(Ticket.id.desc()).first()
+    return jsonify({'last_ticket_id': last_ticket.id if last_ticket else 0})
+

@@ -21,3 +21,5 @@ services:
           property: connectionString
       - key: FLASK_APP
         value: fixu
+      - key: FIXU_BOOTSTRAP_DB
+        value: "1"
