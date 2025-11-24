@@ -55,53 +55,6 @@
         </select>
     </div>
     <div class="col-12 col-md-2">
-        <button class="btn btn-secondary w-100">Filtrar</button>
-    </div>
-</form>
-{% endif %}
-
-<div class="table-responsive">
-    <table class="table table-sm align-middle">
-        <thead>
-            <tr>
-                <th>Título</th>
-                {% if current_user.role in ['admin', 'agent'] %}
-                <th>Prioridad</th>
-                {% endif %}
-                <th>Estado</th>
-                <th>Equipo</th>
-                <th>Asignado</th>
-                <th>Solicitante</th>
-                <th>Creado</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in tickets %}
-            <tr>
-                <td><a href="{{ url_for('tickets.show', ticket_id=t.id) }}" class="text-decoration-none">{{ t.title
-                        }}</a></td>
-                {% if current_user.role in ['admin', 'agent'] %}
-                <td class="text-capitalize">{{ t.priority }}</td>
-                {% endif %}
-                <td class="text-capitalize">{{ t.status }}</td>
-                <td>{{ t.team.name if t.team else '—' }}</td>
-                <td>{{ t.assignee.user.name if t.assignee else '—' }}</td>
-                <td>{{ t.requester.name }}</td>
-                <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="{% if current_user.role in ['admin', 'agent'] %}7{% else %}6{% endif %}"
-                    class="text-center text-muted">No hay tickets.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<nav aria-label="Paginación">
-    <ul class="pagination">
-        {% set query_params = [] %}
         {% if request.args.get('status') %}{% set _ = query_params.append('status=' + request.args.get('status')) %}{%
         endif
         %}
@@ -129,30 +82,30 @@
         {% else %}
         <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
         {% endif %}
-    </ul>
-</nav>
+        </ul>
+        </nav>
 
-{% if current_user.role in ['admin', 'agent'] %}
-<script>
-    async function loadAssignees(teamId) {
-        const sel = document.getElementById('filter-assignee');
-        sel.innerHTML = '<option value="">Todos</option>';
-        if (!teamId) return;
-        const res = await fetch(`/api/teams/${teamId}/members`);
-        if (!res.ok) return;
-        const data = await res.json();
-        for (const m of data) {
-            const opt = document.createElement('option');
-            opt.value = m.id; opt.textContent = m.name;
-            sel.appendChild(opt);
-        }
-    }
-    const filterTeam = document.getElementById('filter-team');
-    const currentTeam = filterTeam ? filterTeam.value : '';
-    if (currentTeam) loadAssignees(currentTeam);
-    if (filterTeam) {
-        filterTeam.addEventListener('change', (e) => loadAssignees(e.target.value));
-    }
-</script>
-{% endif %}
-{% endblock %}
+        {% if current_user.role in ['admin', 'agent'] %}
+        <script>
+            async function loadAssignees(teamId) {
+                const sel = document.getElementById('filter-assignee');
+                sel.innerHTML = '<option value="">Todos</option>';
+                if (!teamId) return;
+                const res = await fetch(`/api/teams/${teamId}/members`);
+                if (!res.ok) return;
+                const data = await res.json();
+                for (const m of data) {
+                    const opt = document.createElement('option');
+                    opt.value = m.id; opt.textContent = m.name;
+                    sel.appendChild(opt);
+                }
+            }
+            const filterTeam = document.getElementById('filter-team');
+            const currentTeam = filterTeam ? filterTeam.value : '';
+            if (currentTeam) loadAssignees(currentTeam);
+            if (filterTeam) {
+                filterTeam.addEventListener('change', (e) => loadAssignees(e.target.value));
+            }
+        </script>
+        {% endif %}
+        {% endblock %}
