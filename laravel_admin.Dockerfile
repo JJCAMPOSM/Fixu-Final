@@ -6,8 +6,12 @@ RUN a2enmod rewrite headers
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
     unzip \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-configure gd --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql zip gd bcmath
 
 # Set DocumentRoot to public/ directory
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
@@ -22,7 +26,7 @@ COPY laravel_admin/ .
 # Install Composer and dependencies directly in the image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-interaction --no-dev --optimize-autoloader
+RUN composer update --no-interaction --no-dev --optimize-autoloader
 
 # Fix permissions for storage and cache directories
 RUN chown -R www-data:www-data storage bootstrap/cache vendor || true

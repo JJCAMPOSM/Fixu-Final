@@ -3,6 +3,10 @@
 @section('content')
     <div class="header">
         <h1>Gestión de Tickets</h1>
+        <div class="flex gap-4">
+            <a href="{{ route('admin.tickets.export.excel') }}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">Exportar Excel</a>
+            <a href="{{ route('admin.tickets.export.pdf') }}" class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">Exportar PDF</a>
+        </div>
     </div>
 
     <div class="card table-container">

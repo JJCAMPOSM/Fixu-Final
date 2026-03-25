@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ExportController;
 
 Route::get('/', function () {
     return redirect()->route('admin.dashboard');
@@ -39,4 +40,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/tickets', [AdminController::class, 'tickets'])->name('tickets.index');
     Route::get('/tickets/{ticket}/edit', [AdminController::class, 'editTicket'])->name('tickets.edit');
     Route::put('/tickets/{ticket}', [AdminController::class, 'updateTicket'])->name('tickets.update');
+
+    // Exports
+    Route::get('/export/tickets/excel', [ExportController::class, 'ticketsExcel'])->name('tickets.export.excel');
+    Route::get('/export/tickets/pdf', [ExportController::class, 'ticketsPdf'])->name('tickets.export.pdf');
 });
