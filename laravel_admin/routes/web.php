@@ -29,4 +29,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/agents', [AdminController::class, 'agents'])->name('agents.index');
     Route::post('/agents', [AdminController::class, 'storeAgent'])->name('agents.store');
     Route::delete('/agents/{user}', [AdminController::class, 'destroyAgent'])->name('agents.destroy');
+
+    // Team Members
+    Route::get('/teams/{team}/members', [AdminController::class, 'teamMembers'])->name('teams.members');
+    Route::post('/teams/{team}/members', [AdminController::class, 'addTeamMember'])->name('teams.members.add');
+    Route::delete('/team-members/{teamMember}', [AdminController::class, 'removeTeamMember'])->name('team-members.remove');
+
+    // Tickets
+    Route::get('/tickets', [AdminController::class, 'tickets'])->name('tickets.index');
+    Route::get('/tickets/{ticket}/edit', [AdminController::class, 'editTicket'])->name('tickets.edit');
+    Route::put('/tickets/{ticket}', [AdminController::class, 'updateTicket'])->name('tickets.update');
 });

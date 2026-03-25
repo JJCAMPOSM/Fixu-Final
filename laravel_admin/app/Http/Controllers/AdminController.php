@@ -115,4 +115,97 @@ class AdminController extends Controller
         $user->delete();
         return redirect()->route('admin.agents.index')->with('success', 'Agente eliminado exitosamente.');
     }
+
+    // --- Team Members ---
+
+    public function teamMembers(Team $team)
+    {
+        // Obtener los miembros actuales del equipo
+        $members = $team->members()->with('user')->get();
+        // Obtener agentes que no están en este equipo
+        $agentsNotInTeam = User::where('role', 'agent')
+            ->whereNotIn('id', $members->pluck('user_id'))
+            ->get();
+            
+        return view('admin.team_members', [
+            'team' => $team,
+            'members' => $members,
+            'available_agents' => $agentsNotInTeam
+        ]);
+    }
+
+    public function addTeamMember(Request $request, Team $team)
+    {
+        $request->validate(['user_id' => 'required|exists:users,id']);
+        
+        $user = User::findOrFail($request->user_id);
+        if($user->role !== 'agent') {
+            return back()->with('error', 'El usuario seleccionado no es un agente.');
+        }
+
+        // Check if already in team
+        if($team->members()->where('user_id', $user->id)->exists()) {
+            return back()->with('error', 'El agente ya pertenece al equipo.');
+        }
+
+        \App\Models\TeamMember::create([
+            'team_id' => $team->id,
+            'user_id' => $user->id,
+            'is_lead' => false
+        ]);
+
+        return back()->with('success', 'Agente asignado al equipo exitosamente.');
+    }
+
+    public function removeTeamMember(\App\Models\TeamMember $teamMember)
+    {
+        $teamMember->delete();
+        return back()->with('success', 'Agente removido del equipo.');
+    }
+
+    // --- Tickets ---
+
+    public function tickets()
+    {
+        $tickets = \App\Models\Ticket::with(['requester', 'category', 'team', 'assignee.user'])->orderBy('created_at', 'desc')->get();
+        return view('admin.tickets', compact('tickets'));
+    }
+
+    public function editTicket(\App\Models\Ticket $ticket)
+    {
+        $requesters = Requester::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+        $teams = Team::orderBy('name')->get();
+        // Todos los miembros de equipo para filtrar con JS
+        $allTeamMembers = \App\Models\TeamMember::with(['user', 'team'])->get();
+        
+        return view('admin.tickets_edit', compact('ticket', 'requesters', 'categories', 'teams', 'allTeamMembers'));
+    }
+
+    public function updateTicket(Request $request, \App\Models\Ticket $ticket)
+    {
+        $request->validate([
+            'title' => 'required|string|max:200',
+            'body' => 'required|string',
+            'requester_id' => 'required|exists:requesters,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'team_id' => 'nullable|exists:teams,id',
+            'assignee_team_member_id' => 'nullable|exists:team_members,id',
+            'status' => 'required|in:open,pending,solved,closed',
+            'priority' => 'required|in:low,medium,high',
+        ]);
+
+        $ticket->update([
+            'title' => $request->title,
+            'body' => $request->body,
+            'requester_id' => $request->requester_id,
+            'category_id' => $request->category_id ?: null,
+            'team_id' => $request->team_id ?: null,
+            'assignee_team_member_id' => $request->assignee_team_member_id ?: null,
+            'status' => $request->status,
+            'priority' => $request->priority,
+        ]);
+
+        return redirect()->route('admin.tickets.index')->with('success', 'Ticket actualizado exitosamente.');
+    }
 }

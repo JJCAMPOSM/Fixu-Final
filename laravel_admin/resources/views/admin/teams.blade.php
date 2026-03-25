@@ -32,7 +32,8 @@
                     <tr>
                         <td>{{ $team->id }}</td>
                         <td style="font-weight: 500;">{{ $team->name }}</td>
-                        <td style="text-align: right;">
+                        <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <a href="{{ route('admin.teams.members', $team) }}" class="btn" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.2); padding: 0.3rem 0.6rem; font-size: 0.85rem;">Miembros</a>
                             <form action="{{ route('admin.teams.destroy', $team) }}" method="POST" onsubmit="return confirm('¿Eliminar este equipo?');">
                                 @csrf
                                 @method('DELETE')

@@ -242,6 +242,7 @@
         </div>
         <ul class="nav-links">
             <li><a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a></li>
+            <li><a href="{{ route('admin.tickets.index') }}" class="nav-link {{ request()->routeIs('admin.tickets.*') ? 'active' : '' }}">Tickets</a></li>
             <li><a href="{{ route('admin.teams.index') }}" class="nav-link {{ request()->routeIs('admin.teams.*') ? 'active' : '' }}">Equipos</a></li>
             <li><a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">Categorías</a></li>
             <li><a href="{{ route('admin.requesters.index') }}" class="nav-link {{ request()->routeIs('admin.requesters.*') ? 'active' : '' }}">Solicitantes</a></li>

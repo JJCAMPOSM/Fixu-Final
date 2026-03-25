@@ -18,5 +18,11 @@ WORKDIR /var/www/html
 
 # Copy the Laravel project files
 COPY laravel_admin/ .
+
+# Install Composer and dependencies directly in the image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer install --no-interaction --no-dev --optimize-autoloader
+
 # Fix permissions for storage and cache directories
-RUN chown -R www-data:www-data storage bootstrap/cache || true
+RUN chown -R www-data:www-data storage bootstrap/cache vendor || true
