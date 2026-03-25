@@ -98,7 +98,7 @@ def create():
                 team_id=None,
                 assignee_team_member_id=None,
                 status='open',
-                priority='medium'
+                priority=form.priority.data
             )
         else:
             # Para admins y agentes, validar campos requeridos

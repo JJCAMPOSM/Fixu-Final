@@ -84,8 +84,35 @@ a:hover {
     transition: all 0.2s;
 }
 
-border-bottom: 1px solid var(--fixu-border);
-padding: 1rem 1.5rem;
+.fixu-sidebar .menu a.active,
+.fixu-sidebar .menu a:hover {
+    background-color: var(--fixu-surface);
+    color: var(--fixu-primary);
+    border-left-color: var(--fixu-primary);
+}
+
+.fixu-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.fixu-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.card {
+    background-color: var(--fixu-surface);
+    border: 1px solid var(--fixu-border);
+    border-radius: var(--fixu-radius);
+    margin-bottom: 1rem;
+    box-shadow: var(--fixu-shadow);
+}
+
+.card-header {
+    border-bottom: 1px solid var(--fixu-border);
+    padding: 1rem 1.5rem;
 }
 
 .card-body {

@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: fixu
+      POSTGRES_USER: fixu_user
+      POSTGRES_PASSWORD: fixu_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  flask_app:
+    build:
+      context: .
+      dockerfile: flask_app.Dockerfile
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
+      SECRET_KEY: dev-secret-change-me
+      FIXU_BOOTSTRAP_DB: "1"
+    ports:
+      - "5000:5000"
+
+  laravel_admin:
+    build:
+      context: .
+      dockerfile: laravel_admin.Dockerfile
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: fixu
+      DB_USERNAME: fixu_user
+      DB_PASSWORD: fixu_password
+    ports:
+      - "8000:80"
+
+volumes:
+  db-data:

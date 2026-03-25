@@ -66,18 +66,20 @@ def create_app():
 def maybe_bootstrap_db():
     """Crea tablas y datos mínimos de desarrollo si la BD está vacía."""
     from .models import User, Team, TeamMember, Requester, Ticket, Category
-    from werkzeug.security import generate_password_hash
 
     db.create_all()
 
     if not User.query.first():
         # Usuarios por defecto
-        admin = User(name='Admin', email='admin@fixu.local', role='admin',
-                     password_hash=generate_password_hash('admin123'))
-        agent = User(name='Agente', email='agent@fixu.local', role='agent',
-                     password_hash=generate_password_hash('agent123'))
-        requester_user = User(name='Solicitante', email='requester@fixu.local', role='requester',
-                              password_hash=generate_password_hash('requester123'))
+        admin = User(name='Admin', email='admin@fixu.local', role='admin')
+        admin.set_password('admin123')
+        
+        agent = User(name='Agente', email='agent@fixu.local', role='agent')
+        agent.set_password('agent123')
+        
+        requester_user = User(name='Solicitante', email='requester@fixu.local', role='requester')
+        requester_user.set_password('requester123')
+        
         db.session.add_all([admin, agent, requester_user])
         db.session.commit()
 
@@ -110,19 +112,21 @@ def maybe_bootstrap_db():
 def register_commands(app):
     import click
     from .models import User, Team, TeamMember, Requester, Ticket, Category
-    from werkzeug.security import generate_password_hash
 
     @app.cli.command('seed')
     def seed():
         """Crea datos de ejemplo."""
         db.create_all()
         if not User.query.first():
-            admin = User(name='Admin', email='admin@fixu.local', role='admin',
-                         password_hash=generate_password_hash('admin123'))
-            agent = User(name='Agente', email='agent@fixu.local', role='agent',
-                         password_hash=generate_password_hash('agent123'))
-            requester_user = User(name='Solicitante', email='requester@fixu.local', role='requester',
-                                  password_hash=generate_password_hash('requester123'))
+            admin = User(name='Admin', email='admin@fixu.local', role='admin')
+            admin.set_password('admin123')
+            
+            agent = User(name='Agente', email='agent@fixu.local', role='agent')
+            agent.set_password('agent123')
+            
+            requester_user = User(name='Solicitante', email='requester@fixu.local', role='requester')
+            requester_user.set_password('requester123')
+            
             db.session.add_all([admin, agent, requester_user])
             db.session.commit()
 
@@ -164,7 +168,7 @@ def register_commands(app):
             user = User(name=name, email=email, role='admin')
         user.name = name
         user.role = 'admin'
-        user.password_hash = generate_password_hash(password)
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
         click.echo(f'Admin listo: {email}')
