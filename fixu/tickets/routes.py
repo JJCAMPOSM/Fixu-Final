@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
 
@@ -6,6 +6,7 @@ from . import bp
 from .forms import TicketForm, CommentForm
 from ..extensions import db
 from ..models import Ticket, Requester, Team, TeamMember, Comment, TicketEvent, Category, SatisfactionTicket, User
+from ..services.bridge_client import get_bridge_client
 
 
 def is_admin_or_agent():
@@ -133,6 +134,28 @@ def create():
         db.session.flush()
         db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket creado'))
         db.session.commit()
+        
+        # Sincronizar con Laravel a través del Bridge API
+        try:
+            bridge = get_bridge_client()
+            ticket_data = {
+                'id': ticket.id,
+                'title': ticket.title,
+                'body': ticket.body,
+                'requester_id': ticket.requester_id,
+                'team_id': ticket.team_id,
+                'assignee_team_member_id': ticket.assignee_team_member_id,
+                'category_id': ticket.category_id,
+                'status': ticket.status,
+                'priority': ticket.priority,
+                'created_at': ticket.created_at.isoformat() if ticket.created_at else None,
+            }
+            result = bridge.sync_ticket('create', ticket_data, source='flask')
+            if not result.get('success'):
+                current_app.logger.warning(f"Sync ticket to bridge failed: {result}")
+        except Exception as e:
+            current_app.logger.error(f"Error syncing ticket to bridge: {e}")
+        
         flash('Ticket creado con éxito.', 'success')
         return redirect(url_for('tickets.show', ticket_id=ticket.id))
 

@@ -42,5 +42,24 @@ services:
     ports:
       - "8000:80"
 
+  bridge_api:
+    build:
+      context: ./bridge_api
+      dockerfile: ../bridge_api.Dockerfile
+    restart: always
+    depends_on:
+      - db
+      - flask_app
+      - laravel_admin
+    environment:
+      FLASK_APP_URL: http://flask_app:5000
+      LARAVEL_ADMIN_URL: http://laravel_admin:80
+      INTERNAL_API_KEY: internal-bridge-secret-key
+      DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./bridge_api:/app
+
 volumes:
   db-data:
