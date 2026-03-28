@@ -10,13 +10,36 @@ use App\Models\User;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
+        $startDate = $request->input('start_date', now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
+
+        // Obtener tickets cerrados / resueltos en el rango de fechas
+        $closedTickets = \App\Models\Ticket::with(['category', 'assignee.user', 'team'])
+            ->whereIn('status', ['closed', 'solved'])
+            ->whereBetween('updated_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->get();
+
+        // Agrupaciones analíticas
+        $ticketsByAgent = $closedTickets->groupBy(function($ticket) {
+            return $ticket->assignee && $ticket->assignee->user ? $ticket->assignee->user->name : 'Sin Asignar';
+        })->map->count();
+
+        $ticketsByCategory = $closedTickets->groupBy(function($ticket) {
+            return $ticket->category ? $ticket->category->name : 'Sin Categoría';
+        })->map->count();
+
+        $ticketsByTeam = $closedTickets->groupBy(function($ticket) {
+            return $ticket->team ? $ticket->team->name : 'Sin Equipo';
+        })->map->count();
+
         return view('admin.dashboard', [
-            'teams_count' => Team::count(),
-            'categories_count' => Category::count(),
-            'requesters_count' => Requester::count(),
-            'agents_count' => User::where('role', 'agent')->count(),
+            'ticketsByAgent' => $ticketsByAgent,
+            'ticketsByCategory' => $ticketsByCategory,
+            'ticketsByTeam' => $ticketsByTeam,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ]);
     }
 

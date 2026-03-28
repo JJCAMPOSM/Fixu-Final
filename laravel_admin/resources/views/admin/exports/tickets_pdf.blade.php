@@ -35,12 +35,16 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $statusLabels = ['open' => 'Abierto', 'pending' => 'Pendiente', 'solved' => 'Resuelto', 'closed' => 'Cerrado'];
+                $priorityLabels = ['low' => 'Baja', 'medium' => 'Media', 'high' => 'Alta'];
+            @endphp
             @foreach($tickets as $ticket)
             <tr>
                 <td>#{{ $ticket->id }}</td>
                 <td>{{ $ticket->title }}</td>
-                <td class="status">{{ $ticket->status }}</td>
-                <td class="status priority-{{ $ticket->priority }}">{{ $ticket->priority }}</td>
+                <td class="status">{{ $statusLabels[$ticket->status] ?? $ticket->status }}</td>
+                <td class="status priority-{{ $ticket->priority }}">{{ $priorityLabels[$ticket->priority] ?? $ticket->priority }}</td>
                 <td>{{ $ticket->requester ? $ticket->requester->name : 'N/A' }}</td>
                 <td>{{ $ticket->team ? $ticket->team->name : 'N/A' }}</td>
                 <td>{{ ($ticket->assignee && $ticket->assignee->user) ? $ticket->assignee->user->name : 'N/A' }}</td>

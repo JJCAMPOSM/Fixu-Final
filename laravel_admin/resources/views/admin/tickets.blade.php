@@ -40,9 +40,15 @@
                                 'solved' => '#6366f1', 
                                 'closed' => '#64748b'
                             ];
+                            $statusLabels = [
+                                'open' => 'Abierto', 
+                                'pending' => 'Pendiente', 
+                                'solved' => 'Resuelto', 
+                                'closed' => 'Cerrado'
+                            ];
                         @endphp
                         <span style="background: {{ $statusColors[$ticket->status] ?? '#64748b' }}22; color: {{ $statusColors[$ticket->status] ?? '#64748b' }}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; text-transform: uppercase;">
-                            {{ $ticket->status }}
+                            {{ $statusLabels[$ticket->status] ?? $ticket->status }}
                         </span>
                     </td>
                     <td>
@@ -52,9 +58,14 @@
                                 'medium' => '#f59e0b', 
                                 'high' => '#ef4444'
                             ];
+                            $priorityLabels = [
+                                'low' => 'Baja', 
+                                'medium' => 'Media', 
+                                'high' => 'Alta'
+                            ];
                         @endphp
                          <span style="background: {{ $priorityColors[$ticket->priority] ?? '#64748b' }}22; color: {{ $priorityColors[$ticket->priority] ?? '#64748b' }}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; text-transform: uppercase;">
-                            {{ $ticket->priority }}
+                            {{ $priorityLabels[$ticket->priority] ?? $ticket->priority }}
                         </span>
                     </td>
                     <td>{{ $ticket->requester ? $ticket->requester->name : 'N/A' }}</td>

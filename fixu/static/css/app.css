@@ -1,20 +1,36 @@
 :root {
-    /* 1. PALETA DE COLORES NEUTROS */
+    /* 1. PALETA LIGHT MODE (Por defecto) */
+    --fixu-bg: #f8fafc;
+    --fixu-surface: rgba(255, 255, 255, 0.9);
+    --fixu-border: rgba(0, 0, 0, 0.1);
+    --fixu-text-main: #0f172a;
+    --fixu-text-secondary: #475569;
+
+    /* 2. PALETA DE ACENTOS (Indigo) */
+    --fixu-primary: #6366f1;
+    --fixu-secondary-glow: #4f46e5;
+    --fixu-critical: #ef4444;
+    --fixu-warning: #f59e0b;
+    --fixu-success: #10b981;
+
+    /* 3. REGLAS DE ESTILO */
+    --fixu-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --fixu-radius: 12px;
+    --fixu-gradient-circles: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
+    --fixu-table-hover: rgba(0, 0, 0, 0.02);
+}
+
+[data-bs-theme="dark"] {
+    /* 1. PALETA DARK MODE */
     --fixu-bg: #0F172A;
-    --fixu-surface: #1E293B;
-    --fixu-border: #334155;
+    --fixu-surface: rgba(30, 41, 59, 0.7);
+    --fixu-border: rgba(255, 255, 255, 0.1);
     --fixu-text-main: #F8FAFC;
     --fixu-text-secondary: #94A3B8;
 
-    /* 2. PALETA DE ACENTOS VIBRANTES */
-    --fixu-primary: #0D92F4;
-    --fixu-secondary-glow: #77CDFF;
-    --fixu-critical: #C62E2E;
-    --fixu-warning: #F95454;
-
-    /* 3. REGLAS DE ESTILO */
     --fixu-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    --fixu-radius: 8px;
+    --fixu-gradient-circles: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+    --fixu-table-hover: rgba(255, 255, 255, 0.02);
 }
 
 html,
@@ -26,6 +42,9 @@ body {
 body {
     background-color: var(--fixu-bg);
     color: var(--fixu-text-main);
+    background-image: var(--fixu-gradient-circles);
+    background-attachment: fixed;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 h1,
@@ -51,7 +70,8 @@ a:hover {
 
 /* A. Sidebar Lateral */
 .fixu-sidebar {
-    background-color: var(--fixu-bg);
+    background-color: var(--fixu-surface);
+    backdrop-filter: blur(12px);
     border-right: 1px solid var(--fixu-border);
     width: 260px;
     flex: 0 0 260px;
@@ -61,6 +81,45 @@ a:hover {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+}
+
+/* Mobile Nav */
+.fixu-mobile-nav {
+    background-color: var(--fixu-surface);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--fixu-border);
+    margin-bottom: 1.5rem;
+    z-index: 1030;
+    padding: 1rem 1.5rem;
+}
+
+.fixu-mobile-nav .nav-link {
+    color: var(--fixu-text-secondary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.fixu-mobile-nav .nav-link.active,
+.fixu-mobile-nav .nav-link:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--fixu-primary);
+}
+
+.fixu-mobile-nav .nav-link.text-danger:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--fixu-critical) !important;
+}
+
+.theme-toggle-btn {
+    color: var(--fixu-text-secondary);
+    transition: color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+    color: var(--fixu-primary);
 }
 
 .fixu-sidebar .brand {
@@ -74,21 +133,19 @@ a:hover {
 }
 
 .fixu-sidebar .menu a {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: var(--fixu-radius);
+    display: block;
+    text-decoration: none;
     color: var(--fixu-text-secondary);
-    border-left: 3px solid transparent;
-    transition: all 0.2s;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .fixu-sidebar .menu a.active,
 .fixu-sidebar .menu a:hover {
-    background-color: var(--fixu-surface);
+    background-color: rgba(99, 102, 241, 0.1);
     color: var(--fixu-primary);
-    border-left-color: var(--fixu-primary);
 }
 
 .fixu-layout {
@@ -104,10 +161,17 @@ a:hover {
 
 .card {
     background-color: var(--fixu-surface);
+    backdrop-filter: blur(8px);
     border: 1px solid var(--fixu-border);
     border-radius: var(--fixu-radius);
     margin-bottom: 1rem;
     box-shadow: var(--fixu-shadow);
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .card-header {
@@ -130,14 +194,15 @@ a:hover {
     color: #FFFFFF;
     font-weight: 500;
     padding: 0.5rem 1.25rem;
-    border-radius: var(--fixu-radius);
+    border-radius: 6px;
     transition: all 0.2s;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
 }
 
 .btn-primary:hover {
     background-color: var(--fixu-secondary-glow);
     border-color: var(--fixu-secondary-glow);
-    box-shadow: 0 0 10px rgba(13, 146, 244, 0.4);
+    transform: translateY(-1px);
 }
 
 .btn-secondary,
@@ -151,9 +216,26 @@ a:hover {
 .btn-secondary:hover,
 .btn-outline-secondary:hover {
     border-color: var(--fixu-primary);
-    color: var(--fixu-text-main);
-    background-color: rgba(13, 146, 244, 0.1);
+    color: var(--fixu-primary);
+    background-color: rgba(99, 102, 241, 0.1);
 }
+
+/* E. Badges / Pills translúcidos */
+.status-pill {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    display: inline-block;
+}
+.status-open { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.status-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.status-solved { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+.status-closed { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+.status-high { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.status-medium { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.status-low { background: rgba(100, 116, 139, 0.15); color: #64748b; }
 
 /* D. Campos de Formulario */
 .form-control,
@@ -204,8 +286,11 @@ a:hover {
 }
 
 .table thead th {
-    color: var(--fixu-text-main);
-    font-weight: 600;
+    color: var(--fixu-text-secondary);
+    font-weight: 500;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     border-bottom: 2px solid var(--fixu-border);
 }
 

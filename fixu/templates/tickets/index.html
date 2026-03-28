@@ -60,39 +60,52 @@
 </form>
 {% endif %}
 
-<div class="table-responsive">
-    <table class="table table-sm align-middle">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Prioridad</th>
-                <th>Estado</th>
-                <th>Equipo</th>
-                <th>Asignado</th>
-                <th>Solicitante</th>
-                <th>Creado</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in tickets %}
-            <tr>
-                <td><a href="{{ url_for('tickets.show', ticket_id=t.id) }}" class="text-decoration-none">{{ t.title
-                        }}</a></td>
-                <td class="text-capitalize">{{ t.priority }}</td>
-                <td class="text-capitalize">{{ t.status }}</td>
-                <td>{{ t.team.name if t.team else '—' }}</td>
-                <td>{{ t.assignee.user.name if t.assignee else '—' }}</td>
-                <td>{{ t.requester.name }}</td>
-                <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7"
-                    class="text-center text-muted">No hay tickets.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Título</th>
+                        <th>Estado</th>
+                        <th>Prioridad</th>
+                        <th>Equipo</th>
+                        <th>Asignado</th>
+                        <th>Solicitante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tickets %}
+                    <tr>
+                        <td class="ps-4 text-muted fw-500">#{{ t.id }}</td>
+                        <td>
+                            <div class="fw-bold"><a href="{{ url_for('tickets.show', ticket_id=t.id) }}" class="text-decoration-none text-reset">{{ t.title }}</a></div>
+                            <div class="small text-muted" style="margin-top: 2px;">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        </td>
+                        <td>
+                            <span class="status-pill status-{{ t.status }}">
+                                {{ {'open': 'Abierto', 'pending': 'Pendiente', 'solved': 'Resuelto', 'closed': 'Cerrado'}.get(t.status, t.status) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-pill status-{{ t.priority }}">
+                                {{ {'low': 'Baja', 'medium': 'Media', 'high': 'Alta'}.get(t.priority, t.priority) }}
+                            </span>
+                        </td>
+                        <td>{{ t.team.name if t.team else '—' }}</td>
+                        <td>{{ t.assignee.user.name if t.assignee else '—' }}</td>
+                        <td>{{ t.requester.name }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No hay tickets.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <nav aria-label="Paginación">

@@ -44,4 +44,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Exports
     Route::get('/export/tickets/excel', [ExportController::class, 'ticketsExcel'])->name('tickets.export.excel');
     Route::get('/export/tickets/pdf', [ExportController::class, 'ticketsPdf'])->name('tickets.export.pdf');
+    Route::get('/export/tickets/closed/pdf', [ExportController::class, 'closedTicketsPdf'])->name('tickets.export.closed.pdf');
 });

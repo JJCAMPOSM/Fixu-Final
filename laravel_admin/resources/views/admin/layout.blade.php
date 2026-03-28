@@ -9,14 +9,32 @@
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981;
+            
+            /* Light mode defaults */
+            --bg-body: #f8fafc;
+            --bg-surface: rgba(255, 255, 255, 0.9);
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: rgba(0, 0, 0, 0.1);
+            --table-hover: rgba(0, 0, 0, 0.02);
+            --gradient-circles: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
+            --input-bg: rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode */
             --bg-body: #0f172a;
             --bg-surface: rgba(30, 41, 59, 0.7);
             --bg-card: rgba(30, 41, 59, 0.9);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);
-            --danger: #ef4444;
-            --success: #10b981;
+            --table-hover: rgba(255, 255, 255, 0.02);
+            --gradient-circles: radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%), radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+            --input-bg: rgba(15, 23, 42, 0.6);
         }
 
         * {
@@ -31,9 +49,8 @@
             color: var(--text-main);
             display: flex;
             min-height: 100vh;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
+            background-image: var(--gradient-circles);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         /* Sidebar */
@@ -65,6 +82,7 @@
         }
 
         .nav-link {
+            display: block;
             text-decoration: none;
             color: var(--text-muted);
             padding: 0.75rem 1rem;
@@ -123,7 +141,7 @@
         input, select, textarea {
             width: 100%;
             padding: 0.75rem;
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: 6px;
             color: var(--text-main);
@@ -196,7 +214,58 @@
         }
 
         tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
+            background: var(--table-hover);
+        }
+
+        /* Mobile & Theme Adjustments */
+        .mobile-header {
+            display: none;
+            padding: 1rem 1.5rem;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            z-index: 40;
+        }
+        
+        button.icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        .dark-icon { display: none; }
+        [data-theme="dark"] .dark-icon { display: block; }
+        [data-theme="dark"] .light-icon { display: none; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar {
+                position: fixed;
+                top: 0; left: 0;
+                height: 100vh;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            .sidebar.show { transform: translateX(0); }
+            .mobile-header { display: flex; }
+            .main-content { padding: 1.5rem; width: 100%; }
+            .header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+            .top-right { display: none !important; }
+        }
+
+        /* Desktop Header top right */
+        .top-right {
+            position: absolute;
+            top: 2rem;
+            right: 3rem;
         }
 
         /* Alerts */
@@ -235,12 +304,34 @@
 </head>
 <body>
 
-    <aside class="sidebar">
+    <script>
+        // Init theme immediately to prevent FOUC
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    
+    <div class="mobile-header">
         <div class="brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            Fixu Admin
+            <img src="{{ asset('img/logo.png') }}" alt="Fixu" style="height: 32px; object-fit: contain;">
+            <span style="font-size: 1.1rem; color: var(--text-muted); font-weight: 500;">Admin</span>
         </div>
-        <ul class="nav-links">
+        <div class="flex items-center gap-4">
+            <button class="icon-btn theme-toggle" onclick="toggleTheme()" title="Cambiar Tema">
+                <svg class="light-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg class="dark-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button class="icon-btn menu-toggle" onclick="toggleSidebar()">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="brand" style="gap: 0.6rem; margin-bottom: 2rem;">
+            <img src="{{ asset('img/logo.png') }}" alt="Fixu" style="height: 38px; object-fit: contain;">
+            <span style="font-size: 1.2rem; color: var(--text-muted); font-weight: 500; align-self: flex-end; padding-bottom: 3px;">Admin</span>
+        </div>
+        <ul class="nav-links" style="padding-top: 1rem;">
             <li><a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a></li>
             <li><a href="{{ route('admin.tickets.index') }}" class="nav-link {{ request()->routeIs('admin.tickets.*') ? 'active' : '' }}">Tickets</a></li>
             <li><a href="{{ route('admin.teams.index') }}" class="nav-link {{ request()->routeIs('admin.teams.*') ? 'active' : '' }}">Equipos</a></li>
@@ -251,6 +342,14 @@
     </aside>
 
     <main class="main-content">
+        <!-- Desktop Theme Toggle -->
+        <div class="top-right">
+            <button class="icon-btn theme-toggle" onclick="toggleTheme()" title="Cambiar Tema">
+                <svg class="light-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg class="dark-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
+
         @if(session('success'))
             <div class="alert alert-success">
                 {{ session('success') }}
@@ -264,6 +363,30 @@
 
         @yield('content')
     </main>
+
+    <script>
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Si hay alguna gráfica instalada de chart.js, necesitamos notificarle su nuevo color de borde
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.color = newTheme === 'light' ? '#64748b' : '#94a3b8';
+                Object.values(Chart.instances).forEach(function(chart) {
+                    if(chart.options.scales.y) {
+                        chart.options.scales.y.grid.color = newTheme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+                    }
+                    chart.update();
+                });
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+    </script>
 
 </body>
 </html>

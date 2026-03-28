@@ -19,17 +19,25 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <div class="mb-2 text-light small">Creado: {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                <div class="mb-3 text-light">{{ ticket.body|e }}</div>
+                <div class="mb-2 text-muted small">Creado: {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="mb-3">{{ ticket.body|e }}</div>
                 <dl class="row mb-0">
-                    <dt class="col-4 col-md-3 text-light">Estado</dt>
-                    <dd class="col-8 col-md-9 text-capitalize text-light">{{ ticket.status }}</dd>
-                    <dt class="col-4 col-md-3 text-light">Prioridad</dt>
-                    <dd class="col-8 col-md-9 text-capitalize text-light">{{ ticket.priority }}</dd>
-                    <dt class="col-4 col-md-3 text-light">Equipo</dt>
-                    <dd class="col-8 col-md-9 text-light">{{ ticket.team.name if ticket.team else '—' }}</dd>
-                    <dt class="col-4 col-md-3 text-light">Asignado</dt>
-                    <dd class="col-8 col-md-9 text-light">{{ ticket.assignee.user.name if ticket.assignee else '—' }}
+                    <dt class="col-4 col-md-3 text-muted">Estado</dt>
+                    <dd class="col-8 col-md-9 text-capitalize">
+                        <span class="status-pill status-{{ ticket.status }}">
+                            {{ {'open': 'Abierto', 'pending': 'Pendiente', 'solved': 'Resuelto', 'closed': 'Cerrado'}.get(ticket.status, ticket.status) }}
+                        </span>
+                    </dd>
+                    <dt class="col-4 col-md-3 text-muted">Prioridad</dt>
+                    <dd class="col-8 col-md-9 text-capitalize">
+                        <span class="status-pill status-{{ ticket.priority }}">
+                            {{ {'low': 'Baja', 'medium': 'Media', 'high': 'Alta'}.get(ticket.priority, ticket.priority) }}
+                        </span>
+                    </dd>
+                    <dt class="col-4 col-md-3 text-muted">Equipo</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.team.name if ticket.team else '—' }}</dd>
+                    <dt class="col-4 col-md-3 text-muted">Asignado</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.assignee.user.name if ticket.assignee else '—' }}
                     </dd>
                 </dl>
             </div>
@@ -43,12 +51,12 @@
             {% else %}
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex align-items-center mb-2 small text-light">
-                        <strong class="me-2">{{ c.team_member.user.name }}</strong>
+                    <div class="d-flex align-items-center mb-2 small text-muted">
+                        <strong class="me-2 text-body">{{ c.team_member.user.name }}</strong>
                         <span>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                         {% if c.private %}<span class="badge bg-secondary ms-2">Privado</span>{% endif %}
                     </div>
-                    <div class="text-light">{{ c.body|e }}</div>
+                    <div class="text-body">{{ c.body|e }}</div>
                 </div>
             </div>
             {% endif %}
@@ -100,10 +108,10 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="h6">Solicitante</h3>
-                <div class="text-light">{{ ticket.requester.name }}</div>
-                <div class="text-light small">{{ ticket.requester.email }}</div>
+                <div class="text-body">{{ ticket.requester.name }}</div>
+                <div class="text-body small">{{ ticket.requester.email }}</div>
                 {% if ticket.requester.phone %}
-                <div class="text-light small">{{ ticket.requester.phone }}</div>
+                <div class="text-body small">{{ ticket.requester.phone }}</div>
                 {% endif %}
             </div>
         </div>
@@ -111,7 +119,7 @@
         <div class="card mt-3">
             <div class="card-body">
                 <h3 class="h6">Historial</h3>
-                <ul class="list-unstyled small mb-0 text-light">
+                <ul class="list-unstyled small mb-0 text-muted">
                     {% for e in ticket.events %}
                     <li>• {{ e.created_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.body }}</li>
                     {% else %}
