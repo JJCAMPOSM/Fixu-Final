@@ -304,14 +304,22 @@ a:hover {
 
 .alert-danger {
     border-color: var(--fixu-critical);
-    background-color: rgba(198, 46, 46, 0.1);
-    color: #ffadad;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--fixu-critical);
 }
 
 .alert-success {
-    border-color: #10B981;
+    border-color: var(--fixu-success);
     background-color: rgba(16, 185, 129, 0.1);
-    color: #6ee7b7;
+    color: var(--fixu-success);
+}
+
+[data-bs-theme="dark"] .alert-danger {
+    color: #fca5a5;
+}
+
+[data-bs-theme="dark"] .alert-success {
+    color: #34d399; /* emerald-400 equivalent, slightly lighter than --fixu-success */
 }
 
 /* Auth Pages */

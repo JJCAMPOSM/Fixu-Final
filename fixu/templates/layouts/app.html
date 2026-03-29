@@ -96,7 +96,7 @@
       </nav>
       <div class="mt-auto small text-muted">
         <div class="mb-2">{{ current_user.name }} ({{ current_user.role }})</div>
-        <a class="btn btn-sm btn-outline-light" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+        <a class="btn btn-sm btn-outline-danger w-100" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
       </div>
       {% endif %}
     </aside>

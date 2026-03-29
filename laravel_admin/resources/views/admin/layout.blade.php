@@ -101,6 +101,7 @@
             flex: 1;
             padding: 3rem;
             overflow-y: auto;
+            position: relative;
         }
 
         .header {
@@ -264,8 +265,9 @@
         /* Desktop Header top right */
         .top-right {
             position: absolute;
-            top: 2rem;
-            right: 3rem;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
         }
 
         /* Alerts */
