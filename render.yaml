@@ -6,20 +6,68 @@ databases:
 
 services:
   - type: web
-    name: fixu-app
-    env: python
-    buildCommand: pip install -r requirements.txt && flask db upgrade
-    startCommand: gunicorn "fixu:create_app()"
+    name: fixu-flask-app
+    env: docker
+    dockerfilePath: ./flask_app.Dockerfile
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.0
-      - key: SECRET_KEY
-        generateValue: true
-      - key: SQLALCHEMY_DATABASE_URI
+      - key: DATABASE_URL
         fromDatabase:
           name: fixu-db
           property: connectionString
-      - key: FLASK_APP
-        value: fixu
+      - key: SECRET_KEY
+        generateValue: true
       - key: FIXU_BOOTSTRAP_DB
         value: "1"
+
+  - type: web
+    name: fixu-laravel-admin
+    env: docker
+    dockerfilePath: ./laravel_admin.Dockerfile
+    envVars:
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: fixu-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: fixu-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: fixu-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: fixu-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: fixu-db
+          property: password
+      - key: APP_KEY
+        generateValue: true
+
+  - type: web
+    name: fixu-bridge-api
+    env: docker
+    dockerContext: ./bridge_api
+    dockerfilePath: ./bridge_api.Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fixu-db
+          property: connectionString
+      - key: INTERNAL_API_KEY
+        generateValue: true
+      - key: FLASK_APP_URL
+        fromService:
+          type: web
+          name: fixu-flask-app
+          property: host
+      - key: LARAVEL_ADMIN_URL
+        fromService:
+          type: web
+          name: fixu-laravel-admin
+          property: host
