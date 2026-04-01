@@ -38,8 +38,7 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
-      - key: APP_KEY
-        sync: false
+
 
   - type: web
     name: fixu-bridge-api

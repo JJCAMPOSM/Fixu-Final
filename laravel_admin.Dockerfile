@@ -44,6 +44,9 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
+# Generate a VALID APP_KEY at build time (proper base64: format)
+RUN php artisan key:generate --force
+
 # Copy the entrypoint script
 COPY laravel_admin.entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
