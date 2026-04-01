@@ -56,7 +56,10 @@
         /* Sidebar */
         .sidebar {
             width: 260px;
-            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
             background: var(--bg-surface);
             backdrop-filter: blur(12px);
             border-right: 1px solid var(--border);
@@ -64,6 +67,7 @@
             display: flex;
             flex-direction: column;
             gap: 2rem;
+            flex-shrink: 0;
         }
 
         .sidebar-spacer {
@@ -372,7 +376,7 @@
             <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem; padding: 0 0.5rem;">
                 Admin (admin)
             </div>
-            <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/logout"
+            <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/auth/logout"
                style="display: block; width: 100%; padding: 0.65rem 1rem; border-radius: 8px;
                       border: 1px solid rgba(239,68,68,0.4); background: transparent;
                       color: #ef4444; font-family: inherit; font-weight: 500; cursor: pointer;
