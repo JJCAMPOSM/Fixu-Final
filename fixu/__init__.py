@@ -57,7 +57,11 @@ def create_app():
 
     with app.app_context():
         if os.environ.get('FIXU_BOOTSTRAP_DB', '0') == '1':
-            maybe_bootstrap_db()
+            try:
+                maybe_bootstrap_db()
+            except Exception as e:
+                import warnings
+                warnings.warn(f"[Fixu] Bootstrap DB falló (puede ser normal en el primer arranque): {e}")
         register_commands(app)
 
     return app

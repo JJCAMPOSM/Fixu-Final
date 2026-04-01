@@ -10,10 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir gunicorn
 
 COPY . .
 
-ENV FLASK_APP=run.py
-ENV FLASK_ENV=development
+ENV FLASK_APP=fixu
+ENV FLASK_ENV=production
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["gunicorn", "run:app", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120"]
