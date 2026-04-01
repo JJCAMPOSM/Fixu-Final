@@ -40,25 +40,6 @@
           <li class="nav-item">
             <a class="nav-link {% if ep.startswith('tickets.') %}active{% endif %}" href="{{ url_for('tickets.index') }}">Tickets</a>
           </li>
-          {% if current_user.role == 'admin' %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ laravel_admin_url }}/admin" target="_blank">
-              <i class="bi bi-graph-up"></i> Dashboard Analítico
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if ep.startswith('categories.') %}active{% endif %}" href="{{ url_for('categories.index') }}">Categorías</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if ep.startswith('requesters.') %}active{% endif %}" href="{{ url_for('requesters.index') }}">Solicitantes</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if ep.startswith('agents.') %}active{% endif %}" href="{{ url_for('agents.index') }}">Agentes</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if ep.startswith('teams.') %}active{% endif %}" href="{{ url_for('teams.index') }}">Equipos</a>
-          </li>
-          {% endif %}
           <li class="nav-item border-top mt-2 pt-2">
             <span class="navbar-text d-block mb-1 px-3">{{ current_user.name }} ({{ current_user.role }})</span>
             <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
@@ -84,23 +65,6 @@
         <a class="{% if ep.startswith('tickets.') %}active{% endif %}" href="{{ url_for('tickets.index') }}">
           <span>Tickets</span>
         </a>
-        {% if current_user.role == 'admin' %}
-        <a href="{{ laravel_admin_url }}/admin" target="_blank">
-          <span><i class="bi bi-graph-up"></i> Dashboard Analítico</span>
-        </a>
-        <a class="{% if ep.startswith('categories.') %}active{% endif %}" href="{{ url_for('categories.index') }}">
-          <span>Categorías</span>
-        </a>
-        <a class="{% if ep.startswith('requesters.') %}active{% endif %}" href="{{ url_for('requesters.index') }}">
-          <span>Solicitantes</span>
-        </a>
-        <a class="{% if ep.startswith('agents.') %}active{% endif %}" href="{{ url_for('agents.index') }}">
-          <span>Agentes</span>
-        </a>
-        <a class="{% if ep.startswith('teams.') %}active{% endif %}" href="{{ url_for('teams.index') }}">
-          <span>Equipos</span>
-        </a>
-        {% endif %}
       </nav>
       <div class="mt-auto small text-muted">
         <div class="mb-2">{{ current_user.name }} ({{ current_user.role }})</div>
