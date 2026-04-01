@@ -25,8 +25,10 @@ fi
 # (Render may set APP_KEY as empty which takes precedence over .env)
 unset APP_KEY
 
-# Clear config cache to pick up new values
+# Clear ALL caches to pick up new values and fresh views
 php /var/www/html/artisan config:clear || true
+php /var/www/html/artisan view:clear || true
+php /var/www/html/artisan cache:clear || true
 
 echo "[Fixu] Starting Apache..."
 exec apache2-foreground

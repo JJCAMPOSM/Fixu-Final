@@ -368,8 +368,18 @@
             <li><a href="{{ route('admin.agents.index') }}" class="nav-link {{ request()->routeIs('admin.agents.*') ? 'active' : '' }}">Agentes</a></li>
         </ul>
         <div class="sidebar-spacer"></div>
-        <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
-            <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/logout" class="btn-logout">
+        <div style="padding-top: 1rem; border-top: 1px solid rgba(100,116,139,0.3);">
+            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem; padding: 0 0.5rem;">
+                Admin (admin)
+            </div>
+            <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/logout"
+               style="display: block; width: 100%; padding: 0.65rem 1rem; border-radius: 8px;
+                      border: 1px solid rgba(239,68,68,0.4); background: transparent;
+                      color: #ef4444; font-family: inherit; font-weight: 500; cursor: pointer;
+                      text-align: center; text-decoration: none; font-size: 0.95rem;
+                      transition: background 0.2s;"
+               onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+               onmouseout="this.style.background='transparent'">
                 Cerrar sesión
             </a>
         </div>
