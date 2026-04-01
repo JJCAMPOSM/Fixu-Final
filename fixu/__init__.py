@@ -50,10 +50,13 @@ def create_app():
     def home():
         return redirect(url_for('tickets.index'))
 
-    # Inyectar helper csrf_token() en Jinja
+    # Inyectar helper csrf_token() y URL de Laravel Admin en Jinja
     @app.context_processor
-    def inject_csrf_token():
-        return dict(csrf_token=generate_csrf)
+    def inject_globals():
+        return dict(
+            csrf_token=generate_csrf,
+            laravel_admin_url=app.config.get('LARAVEL_ADMIN_URL', '')
+        )
 
     with app.app_context():
         if os.environ.get('FIXU_BOOTSTRAP_DB', '0') == '1':

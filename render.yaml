@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: FIXU_BOOTSTRAP_DB
         value: "1"
+      - key: LARAVEL_ADMIN_URL
+        value: "https://fixu-laravel-admin.onrender.com"
 
   - type: web
     name: fixu-laravel-admin
