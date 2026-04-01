@@ -56,6 +56,7 @@
         /* Sidebar */
         .sidebar {
             width: 260px;
+            min-height: 100vh;
             background: var(--bg-surface);
             backdrop-filter: blur(12px);
             border-right: 1px solid var(--border);
@@ -63,7 +64,10 @@
             display: flex;
             flex-direction: column;
             gap: 2rem;
-            justify-content: space-between;
+        }
+
+        .sidebar-spacer {
+            flex: 1;
         }
 
         .brand {
@@ -363,7 +367,8 @@
             <li><a href="{{ route('admin.requesters.index') }}" class="nav-link {{ request()->routeIs('admin.requesters.*') ? 'active' : '' }}">Solicitantes</a></li>
             <li><a href="{{ route('admin.agents.index') }}" class="nav-link {{ request()->routeIs('admin.agents.*') ? 'active' : '' }}">Agentes</a></li>
         </ul>
-        <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <div class="sidebar-spacer"></div>
+        <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
             <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/logout" class="btn-logout">
                 Cerrar sesión
             </a>
