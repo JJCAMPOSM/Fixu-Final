@@ -63,6 +63,7 @@
             display: flex;
             flex-direction: column;
             gap: 2rem;
+            justify-content: space-between;
         }
 
         .brand {
@@ -94,6 +95,27 @@
         .nav-link:hover, .nav-link.active {
             background: rgba(99, 102, 241, 0.1);
             color: var(--primary);
+        }
+
+        .btn-logout {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: transparent;
+            color: var(--danger);
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-top: auto;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.1);
         }
 
         /* Main Content */
@@ -341,6 +363,11 @@
             <li><a href="{{ route('admin.requesters.index') }}" class="nav-link {{ request()->routeIs('admin.requesters.*') ? 'active' : '' }}">Solicitantes</a></li>
             <li><a href="{{ route('admin.agents.index') }}" class="nav-link {{ request()->routeIs('admin.agents.*') ? 'active' : '' }}">Agentes</a></li>
         </ul>
+        <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
+            <a href="{{ env('FLASK_APP_URL', 'http://localhost:5000') }}/logout" class="btn-logout">
+                Cerrar sesión
+            </a>
+        </div>
     </aside>
 
     <main class="main-content">

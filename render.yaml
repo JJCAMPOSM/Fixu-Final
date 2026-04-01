@@ -40,6 +40,8 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
+      - key: FLASK_APP_URL
+        value: "https://fixu-flask-app.onrender.com"
 
 
   - type: web
