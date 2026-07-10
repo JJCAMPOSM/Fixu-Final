@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: fixu
       POSTGRES_USER: fixu_user
       POSTGRES_PASSWORD: fixu_password
-    ports:
-      - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
 
@@ -22,6 +20,7 @@ services:
       DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
       SECRET_KEY: dev-secret-change-me
       FIXU_BOOTSTRAP_DB: "1"
+      HMAC_SECRET_KEY: internal-hmac-secret-key
     ports:
       - "5000:5000"
 
@@ -56,8 +55,7 @@ services:
       LARAVEL_ADMIN_URL: http://laravel_admin:80
       INTERNAL_API_KEY: internal-bridge-secret-key
       DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
-    ports:
-      - "8001:8000"
+      HMAC_SECRET_KEY: internal-hmac-secret-key
     volumes:
       - ./bridge_api:/app
 

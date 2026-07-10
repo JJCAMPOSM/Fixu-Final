@@ -14,27 +14,34 @@ security = HTTPBearer()
 
 async def verify_webhook_signature(
     request: Request,
-    x_signature: Optional[str] = Header(None),
+    x_signature: Optional[str] = Header(None, alias="X-Signature"),
+    x_hmac_signature: Optional[str] = Header(None, alias="X-HMAC-Signature"),
     settings: Settings = Depends(get_settings)
 ) -> bool:
-    """Verifica la firma del webhook."""
-    if not x_signature:
+    """Verifica la firma HMAC del webhook usando HMAC_SECRET_KEY o INTERNAL_API_KEY."""
+    signature = x_hmac_signature or x_signature
+    if not signature:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Firma requerida"
+            detail="Firma HMAC requerida"
         )
     
     body = await request.body()
-    expected_signature = hmac.new(
+    expected_hmac = hmac.new(
+        settings.HMAC_SECRET_KEY.encode(),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    expected_legacy = hmac.new(
         settings.INTERNAL_API_KEY.encode(),
         body,
         hashlib.sha256
     ).hexdigest()
     
-    if not hmac.compare_digest(x_signature, expected_signature):
+    if not (hmac.compare_digest(signature, expected_hmac) or hmac.compare_digest(signature, expected_legacy)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Firma inválida"
+            detail="Firma HMAC inválida"
         )
     return True
 

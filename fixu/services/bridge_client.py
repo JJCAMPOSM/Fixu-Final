@@ -1,5 +1,8 @@
 import requests
 import os
+import json
+import hmac
+import hashlib
 from typing import Optional, Dict, Any
 
 
@@ -9,6 +12,7 @@ class BridgeAPIClient:
     def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
         self.base_url = base_url or os.getenv("BRIDGE_API_URL", "http://bridge_api:8000")
         self.api_key = api_key or os.getenv("INTERNAL_API_KEY", "internal-bridge-secret-key")
+        self.hmac_secret = os.getenv("HMAC_SECRET_KEY", "internal-hmac-secret-key")
         self.headers = {
             "Content-Type": "application/json",
             "X-API-Key": self.api_key
@@ -17,15 +21,25 @@ class BridgeAPIClient:
     def _request(self, method: str, endpoint: str, data: Optional[Dict] = None) -> Dict[str, Any]:
         """Realiza una petición HTTP al Bridge API."""
         url = f"{self.base_url}{endpoint}"
+        headers = dict(self.headers)
+        body_bytes = None
+        if data is not None:
+            body_bytes = json.dumps(data).encode("utf-8")
+            signature = hmac.new(
+                self.hmac_secret.encode("utf-8"),
+                body_bytes,
+                hashlib.sha256
+            ).hexdigest()
+            headers["X-HMAC-Signature"] = signature
         try:
             if method.upper() == "GET":
-                response = requests.get(url, headers=self.headers, timeout=30)
+                response = requests.get(url, headers=headers, timeout=30)
             elif method.upper() == "POST":
-                response = requests.post(url, json=data, headers=self.headers, timeout=30)
+                response = requests.post(url, data=body_bytes, headers=headers, timeout=30)
             elif method.upper() == "PUT":
-                response = requests.put(url, json=data, headers=self.headers, timeout=30)
+                response = requests.put(url, data=body_bytes, headers=headers, timeout=30)
             elif method.upper() == "DELETE":
-                response = requests.delete(url, headers=self.headers, timeout=30)
+                response = requests.delete(url, headers=headers, timeout=30)
             else:
                 return {"error": f"Método no soportado: {method}"}
             

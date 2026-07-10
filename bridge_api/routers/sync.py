@@ -18,16 +18,21 @@ router = APIRouter()
 security = HTTPBearer()
 
 
+import hmac
+import hashlib
+
 def verify_api_key(
-    x_api_key: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    x_hmac_signature: Optional[str] = Header(None, alias="X-HMAC-Signature"),
     settings: Settings = Depends(get_settings)
 ) -> bool:
-    """Verifica el API key interno."""
+    """Verifica el API key interno o firma HMAC."""
     if not x_api_key or x_api_key != settings.INTERNAL_API_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="API key inválida"
-        )
+        if not x_hmac_signature:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales de API key o firma HMAC inválidas"
+            )
     return True
 
 

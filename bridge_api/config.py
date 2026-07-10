@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     
     # API Keys para autenticación entre servicios
     INTERNAL_API_KEY: str = os.getenv("INTERNAL_API_KEY", "internal-secret-key")
+    HMAC_SECRET_KEY: str = os.getenv("HMAC_SECRET_KEY", "default-hmac-secret")
     
     # Base de datos (compartida con Flask)
     DATABASE_URL: str = os.getenv(

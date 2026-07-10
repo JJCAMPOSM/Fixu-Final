@@ -3,6 +3,8 @@ from datetime import datetime
 from functools import wraps
 from flask_login import login_required, current_user
 import os
+import hmac
+import hashlib
 
 from . import bp
 from .. import db
@@ -11,13 +13,20 @@ from ..services.bridge_client import get_bridge_client
 
 
 def require_api_key(f):
-    """Decorador para proteger endpoints de API interna."""
+    """Decorador para proteger endpoints de API interna con API Key y firma HMAC."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        api_key = request.headers.get('X-API-Key')
-        expected_key = os.getenv('INTERNAL_API_KEY', 'internal-bridge-secret-key')
-        if api_key != expected_key:
-            return jsonify({'error': 'Unauthorized'}), 401
+        hmac_sig = request.headers.get('X-HMAC-Signature')
+        if hmac_sig:
+            secret = os.getenv('HMAC_SECRET_KEY', 'internal-hmac-secret-key')
+            expected = hmac.new(secret.encode('utf-8'), request.get_data(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(hmac_sig, expected):
+                return jsonify({'error': 'Invalid HMAC signature'}), 401
+        else:
+            api_key = request.headers.get('X-API-Key')
+            expected_key = os.getenv('INTERNAL_API_KEY', 'internal-bridge-secret-key')
+            if api_key != expected_key:
+                return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated_function
 
