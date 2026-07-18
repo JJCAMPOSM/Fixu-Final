@@ -34,7 +34,9 @@ def login():
                     db.session.commit()
             flash('Bienvenido a Fixu', 'success')
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('tickets.index'))
+            if not next_page or not next_page.startswith('/') or next_page.startswith('//'):
+                next_page = url_for('tickets.index')
+            return redirect(next_page)
         flash('Credenciales inválidas', 'danger')
     return render_template('auth/login.html', form=form)
 

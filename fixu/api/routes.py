@@ -32,6 +32,7 @@ def require_api_key(f):
 
 
 @bp.get('/teams/<int:team_id>/members')
+@login_required
 def team_members(team_id: int):
     members = TeamMember.query.filter_by(team_id=team_id).all()
     data = [
@@ -274,6 +275,7 @@ def webhook_ticket_created():
 
 
 @bp.get('/tickets/check-updates')
+@login_required
 def check_updates():
     """Retorna el ID del último ticket creado para polling"""
     last_ticket = Ticket.query.order_by(Ticket.id.desc()).first()
