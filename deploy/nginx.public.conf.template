@@ -37,7 +37,7 @@ http {
         ssl_certificate     /etc/nginx/ssl/fixu.crt;
         ssl_certificate_key /etc/nginx/ssl/fixu.key;
 
-        location /admin/ {
+        location ~ ^/admin(/|$) {
             proxy_pass http://laravel_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
