@@ -32,7 +32,11 @@ async def _forward_to_flask(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="No se pudo contactar al backend Flask")
 
     if response.status_code >= 400:
-        raise HTTPException(status_code=response.status_code, detail=response.json().get("error", response.text))
+        try:
+            detail = response.json().get("error", response.text)
+        except ValueError:
+            detail = response.text
+        raise HTTPException(status_code=response.status_code, detail=detail)
     return response.json()
 
 

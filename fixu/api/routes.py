@@ -11,6 +11,7 @@ import jwt as pyjwt
 
 from . import bp
 from .. import db
+from ..extensions import csrf
 from ..models import TeamMember, SatisfactionTicket, Ticket, User, Team, Requester, Category, TicketEvent
 from ..services.bridge_client import get_bridge_client
 from ..rate_limiter import rate_limit
@@ -335,6 +336,7 @@ def jwt_required(f):
 
 
 @bp.post('/mobile/login')
+@csrf.exempt
 @rate_limit(limit=6, window=60)
 def mobile_login():
     """Login para la App Móvil (Herramienta de Campo). Devuelve un JWT."""
@@ -397,6 +399,7 @@ def _save_ticket_photo(photo_b64: str) -> str:
 
 
 @bp.post('/mobile/tickets')
+@csrf.exempt
 @jwt_required
 @rate_limit(limit=6, window=60)
 def mobile_create_ticket():
