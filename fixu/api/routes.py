@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask_login import login_required, current_user
 import os
+import re
 import hmac
 import hashlib
 import base64
@@ -365,11 +366,53 @@ def mobile_login():
     if not user or not user.check_password(password):
         return jsonify({'error': 'Credenciales inválidas'}), 401
 
+    if user.role != 'requester':
+        return jsonify({'error': 'Esta app es solo para solicitantes. Usa la versión web para administrar o dar soporte.'}), 403
+
     token = _issue_jwt(user)
     return jsonify({
         'token': token,
         'user': {'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role}
     })
+
+
+MOBILE_EMAIL_REGEX = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+
+
+@bp.post('/mobile/register')
+@csrf.exempt
+@rate_limit(limit=6, window=60)
+def mobile_register():
+    """Registro de solicitantes desde la App Móvil. Devuelve un JWT (autologin)."""
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+
+    if not name or len(name) < 2 or len(name) > 120:
+        return jsonify({'error': 'El nombre debe tener entre 2 y 120 caracteres'}), 400
+    if not email or not MOBILE_EMAIL_REGEX.match(email):
+        return jsonify({'error': 'Ingresa un correo válido'}), 400
+    if not password or len(password) < 8:
+        return jsonify({'error': 'La contraseña debe tener al menos 8 caracteres'}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'El correo ya está registrado. Inicia sesión.'}), 409
+
+    user = User(name=name, email=email, role='requester')
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()
+
+    requester = Requester(name=user.name, email=user.email, phone='')
+    db.session.add(requester)
+    db.session.commit()
+
+    token = _issue_jwt(user)
+    return jsonify({
+        'token': token,
+        'user': {'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role}
+    }), 201
 
 
 @bp.get('/mobile/me')

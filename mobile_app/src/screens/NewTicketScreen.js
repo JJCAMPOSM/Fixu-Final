@@ -7,10 +7,12 @@ import * as Location from 'expo-location';
 import { createTicket } from '../api';
 import { colors, PRIORITY_STYLE } from '../theme';
 import FieldModeBadge from '../components/FieldModeBadge';
+import { useAuth } from '../context/AuthContext';
 
 const PRIORITIES = ['low', 'medium', 'high'];
 
-export default function NewTicketScreen({ token, onCreated, onCancel }) {
+export default function NewTicketScreen({ navigation }) {
+  const { token } = useAuth();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -72,7 +74,7 @@ export default function NewTicketScreen({ token, onCreated, onCancel }) {
         priority,
         photo_base64: photo?.base64,
       });
-      onCreated();
+      navigation.goBack();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -81,9 +83,8 @@ export default function NewTicketScreen({ token, onCreated, onCancel }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 52 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
       <FieldModeBadge />
-      <Text style={styles.title}>Nuevo ticket de campo</Text>
 
       <Text style={styles.label}>Título</Text>
       <TextInput
@@ -151,7 +152,7 @@ export default function NewTicketScreen({ token, onCreated, onCancel }) {
       <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Enviar reporte</Text>}
       </TouchableOpacity>
-      <TouchableOpacity style={styles.cancel} onPress={onCancel}>
+      <TouchableOpacity style={styles.cancel} onPress={() => navigation.goBack()}>
         <Text style={styles.cancelText}>Cancelar</Text>
       </TouchableOpacity>
     </ScrollView>

@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import PasswordInput from '../components/PasswordInput';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+export default function RegisterScreen({ navigation }) {
+  const { register } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
+    if (name.trim().length < 2 || name.trim().length > 120) {
+      return 'El nombre debe tener entre 2 y 120 caracteres.';
+    }
     if (!EMAIL_REGEX.test(email.trim())) return 'Ingresa un correo válido.';
-    if (!password) return 'Ingresa tu contraseña.';
+    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (password !== confirmPassword) return 'Las contraseñas no coinciden.';
     return null;
   };
 
@@ -28,7 +34,7 @@ export default function LoginScreen({ navigation }) {
     setError('');
     setLoading(true);
     try {
-      await login(email.trim().toLowerCase(), password);
+      await register(name.trim(), email.trim().toLowerCase(), password);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -37,16 +43,20 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoWrap}>
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoEmoji}>🔧</Text>
-        </View>
-        <Text style={styles.title}>FixU Campo</Text>
-        <Text style={styles.subtitle}>Reporta fallas desde el sitio, con evidencia fotográfica</Text>
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingTop: 40 }}>
+      <Text style={styles.title}>Crear cuenta</Text>
+      <Text style={styles.subtitle}>Regístrate para reportar fallas desde el campo</Text>
 
       <View style={styles.card}>
+        <Text style={styles.label}>Nombre completo</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Tu nombre"
+          placeholderTextColor={colors.textMuted}
+          value={name}
+          onChangeText={setName}
+        />
+
         <Text style={styles.label}>Correo</Text>
         <TextInput
           style={styles.input}
@@ -57,37 +67,31 @@ export default function LoginScreen({ navigation }) {
           value={email}
           onChangeText={setEmail}
         />
+
         <Text style={styles.label}>Contraseña</Text>
-        <PasswordInput
-          placeholder="••••••••"
-          value={password}
-          onChangeText={setPassword}
-        />
+        <PasswordInput placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} />
+
+        <Text style={styles.label}>Confirmar contraseña</Text>
+        <PasswordInput placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} />
 
         {!!error && <Text style={styles.error}>{error}</Text>}
 
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar sesión</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Crear cuenta</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
+        <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.background },
-  logoWrap: { alignItems: 'center', marginBottom: 28 },
-  logoCircle: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
-  },
-  logoEmoji: { fontSize: 30 },
-  title: { fontSize: 26, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, paddingHorizontal: 20 },
+  container: { flex: 1, backgroundColor: colors.background },
+  title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 24 },
   card: {
     backgroundColor: colors.surface, borderRadius: 16, padding: 20,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2,

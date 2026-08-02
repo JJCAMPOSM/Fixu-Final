@@ -1,18 +1,15 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
 import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 
-export default function TicketDetailScreen({ ticket, onBack }) {
+export default function TicketDetailScreen({ route }) {
+  const { ticket } = route.params;
   const status = STATUS_STYLE[ticket.status] || STATUS_STYLE.open;
   const priority = PRIORITY_STYLE[ticket.priority] || PRIORITY_STYLE.medium;
   const createdAt = ticket.created_at ? new Date(ticket.created_at) : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 52, paddingBottom: 40 }}>
-      <TouchableOpacity onPress={onBack} style={styles.backRow}>
-        <Text style={styles.backText}>‹ Mis tickets</Text>
-      </TouchableOpacity>
-
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       {ticket.photo_url ? (
         <Image source={{ uri: ticket.photo_url }} style={styles.photo} />
       ) : (
@@ -52,8 +49,6 @@ export default function TicketDetailScreen({ ticket, onBack }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  backRow: { marginBottom: 12 },
-  backText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   photo: { width: '100%', height: 220, borderRadius: 14, backgroundColor: colors.surface, marginBottom: 14 },
   photoPlaceholder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
   badgeRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },

@@ -1,82 +1,66 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 import TicketsScreen from './src/screens/TicketsScreen';
 import NewTicketScreen from './src/screens/NewTicketScreen';
 import TicketDetailScreen from './src/screens/TicketDetailScreen';
+import { colors } from './src/theme';
 
-export default function App() {
-  const [booting, setBooting] = useState(true);
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState('tickets'); // 'tickets' | 'new' | 'detail'
-  const [selectedTicket, setSelectedTicket] = useState(null);
+const Stack = createNativeStackNavigator();
 
-  useEffect(() => {
-    (async () => {
-      const savedToken = await SecureStore.getItemAsync('fixu_token');
-      const savedUser = await SecureStore.getItemAsync('fixu_user');
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      }
-      setBooting(false);
-    })();
-  }, []);
+const screenOptions = {
+  headerStyle: { backgroundColor: colors.surface },
+  headerTintColor: colors.text,
+  headerTitleStyle: { fontWeight: '700' },
+};
 
-  const handleLoggedIn = async (newToken, newUser) => {
-    await SecureStore.setItemAsync('fixu_token', newToken);
-    await SecureStore.setItemAsync('fixu_user', JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-  };
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ ...screenOptions, headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: 'Crear cuenta' }} />
+    </Stack.Navigator>
+  );
+}
 
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('fixu_token');
-    await SecureStore.deleteItemAsync('fixu_user');
-    setToken(null);
-    setUser(null);
-    setScreen('tickets');
-  };
+function AppStack() {
+  return (
+    <Stack.Navigator screenOptions={screenOptions}>
+      <Stack.Screen name="Tickets" component={TicketsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ title: 'Nuevo ticket' }} />
+      <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: 'Detalle del ticket' }} />
+    </Stack.Navigator>
+  );
+}
+
+function RootNavigator() {
+  const { booting, token } = useAuth();
 
   if (booting) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6' }}>
-        <ActivityIndicator color="#4f46e5" size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
-      {!token ? (
-        <LoginScreen onLoggedIn={handleLoggedIn} />
-      ) : screen === 'new' ? (
-        <NewTicketScreen
-          token={token}
-          onCreated={() => setScreen('tickets')}
-          onCancel={() => setScreen('tickets')}
-        />
-      ) : screen === 'detail' && selectedTicket ? (
-        <TicketDetailScreen
-          ticket={selectedTicket}
-          onBack={() => setScreen('tickets')}
-        />
-      ) : (
-        <TicketsScreen
-          token={token}
-          user={user}
-          onNewTicket={() => setScreen('new')}
-          onOpenTicket={(ticket) => {
-            setSelectedTicket(ticket);
-            setScreen('detail');
-          }}
-          onLogout={handleLogout}
-        />
-      )}
-    </View>
+    <NavigationContainer>
+      {token ? <AppStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <RootNavigator />
+    </AuthProvider>
   );
 }

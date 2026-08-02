@@ -3,8 +3,10 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Ima
 import { listTickets } from '../api';
 import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import FieldModeBadge from '../components/FieldModeBadge';
+import { useAuth } from '../context/AuthContext';
 
-export default function TicketsScreen({ token, user, onNewTicket, onOpenTicket, onLogout }) {
+export default function TicketsScreen({ navigation }) {
+  const { token, user, logout } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +40,7 @@ export default function TicketsScreen({ token, user, onNewTicket, onOpenTicket, 
             <Text style={styles.headerTitle}>Hola, {user?.name?.split(' ')[0] || 'Agente'} 👋</Text>
             <Text style={styles.headerSubtitle}>{activeCount} ticket(s) activos</Text>
           </View>
-          <TouchableOpacity onPress={onLogout}>
+          <TouchableOpacity onPress={logout}>
             <Text style={styles.logout}>Salir</Text>
           </TouchableOpacity>
         </View>
@@ -56,7 +58,7 @@ export default function TicketsScreen({ token, user, onNewTicket, onOpenTicket, 
           const status = STATUS_STYLE[item.status] || STATUS_STYLE.open;
           const priority = PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.medium;
           return (
-            <TouchableOpacity style={styles.card} onPress={() => onOpenTicket(item)} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TicketDetail', { ticket: item })} activeOpacity={0.8}>
               {item.photo_url ? (
                 <Image source={{ uri: item.photo_url }} style={styles.thumb} />
               ) : (
@@ -81,7 +83,7 @@ export default function TicketsScreen({ token, user, onNewTicket, onOpenTicket, 
         }}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={onNewTicket}>
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NewTicket')}>
         <Text style={styles.fabText}>+ Nuevo ticket</Text>
       </TouchableOpacity>
     </View>

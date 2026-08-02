@@ -21,6 +21,9 @@ async function request(path, { method = 'GET', token, body } = {}) {
 export const login = (email, password) =>
   request('/login', { method: 'POST', body: { email, password } });
 
+export const register = (name, email, password) =>
+  request('/register', { method: 'POST', body: { name, email, password } });
+
 export const me = (token) => request('/me', { token });
 
 export const listTickets = (token) => request('/tickets', { token });

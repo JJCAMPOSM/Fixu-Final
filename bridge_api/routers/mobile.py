@@ -50,6 +50,16 @@ async def mobile_login(
     return await _forward_to_flask(http_client, settings, "POST", "login", None, payload)
 
 
+@router.post("/register", dependencies=[Depends(rate_limit_dependency(limit=6, window=60))])
+async def mobile_register(
+    payload: dict = Body(...),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Registro de solicitantes desde la App Móvil. Entrada pública vía Nginx :8080."""
+    return await _forward_to_flask(http_client, settings, "POST", "register", None, payload)
+
+
 @router.get("/me")
 async def mobile_me(
     authorization: Optional[str] = Header(None),
