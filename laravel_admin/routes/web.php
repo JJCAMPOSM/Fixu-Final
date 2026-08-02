@@ -8,7 +8,9 @@ Route::get('/', function () {
     return redirect()->route('admin.dashboard');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::get('/admin/logout', [AdminController::class, 'logout'])->name('admin.logout');
+
+Route::prefix('admin')->name('admin.')->middleware('admin.access')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
     
     // Teams

@@ -67,6 +67,7 @@ services:
       DB_DATABASE: fixu
       DB_USERNAME: fixu_user
       DB_PASSWORD: ${DB_PASSWORD:-fixu_password}
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
     ports:
       - "8000:80"
 

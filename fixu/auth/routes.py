@@ -1,3 +1,10 @@
+import base64
+import hashlib
+import hmac
+import json
+import os
+import time
+
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -8,12 +15,23 @@ from ..models import User, Requester
 from ..rate_limiter import rate_limit
 
 
+def _admin_handoff_token(user):
+    """Token firmado (HMAC compartido) de corta duración para que Laravel
+    verifique que Flask ya autenticó a un admin antes de dejarlo entrar
+    a /admin. Sin esto, cualquiera podía entrar a /admin sin loguearse."""
+    secret = os.getenv('HMAC_SECRET_KEY', 'internal-hmac-secret-key')
+    payload = json.dumps({'role': user.role, 'email': user.email, 'exp': int(time.time()) + 60}).encode()
+    payload_b64 = base64.urlsafe_b64encode(payload).decode().rstrip('=')
+    signature = hmac.new(secret.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+    return f'{payload_b64}.{signature}'
+
+
 @bp.route('/login', methods=['GET', 'POST'])
 @rate_limit(limit=6, window=60)
 def login():
     if current_user.is_authenticated:
         if current_user.role == 'admin':
-            return redirect('/admin')
+            return redirect(f'/admin?admin_token={_admin_handoff_token(current_user)}')
         return redirect(url_for('tickets.index'))
 
     form = LoginForm()
@@ -24,7 +42,7 @@ def login():
             login_user(user, remember=form.remember.data)
             # Admin → redirigir a Laravel Admin Panel (ruta relativa, nginx la enruta a Laravel)
             if user.role == 'admin':
-                return redirect('/admin')
+                return redirect(f'/admin?admin_token={_admin_handoff_token(user)}')
             # Asegurar perfil de solicitante si aplica
             if user.role == 'requester':
                 req = Requester.query.filter_by(email=user.email).first()

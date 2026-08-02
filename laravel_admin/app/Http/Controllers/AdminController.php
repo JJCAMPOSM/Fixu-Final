@@ -231,4 +231,13 @@ class AdminController extends Controller
 
         return redirect()->route('admin.tickets.index')->with('success', 'Ticket actualizado exitosamente.');
     }
+
+    public function logout(Request $request)
+    {
+        $request->session()->forget('admin_authenticated');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/auth/logout');
+    }
 }
