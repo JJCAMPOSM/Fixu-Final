@@ -1,0 +1,40 @@
+# Se ejecuta en el SERVIDOR PÚBLICO (DMZ). Ver DEPLOY_RUBRICA.md.
+# Antes de levantar, genera deploy/nginx.public.conf a partir de la plantilla
+# reemplazando <IP_PRIVADA> por la IP privada real del servidor privado.
+#
+# Uso: docker compose -f deploy/docker-compose.public.yml up -d
+
+services:
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "8404:8404"
+    volumes:
+      - ./nginx.public.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:1.1
+    restart: always
+    command: ["--nginx.scrape-uri=http://nginx:8404/nginx_status"]
+    depends_on: [nginx]
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    ports:
+      - "8405:9090"
+    volumes:
+      - ./prometheus.public.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    depends_on: [prometheus]

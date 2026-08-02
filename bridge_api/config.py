@@ -23,6 +23,10 @@ class Settings(BaseSettings):
         "DATABASE_URL",
         "postgresql://fixu_user:fixu_password@db:5432/fixu"
     )
+
+    # Redis para Rate Limiting global (compartido con las réplicas de Flask)
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
     
     class Config:
         env_file = ".env"

@@ -1,28 +1,50 @@
 services:
+  # ---------------- Red Privada (sin puertos publicados al host) ----------------
   db:
     image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_DB: fixu
       POSTGRES_USER: fixu_user
-      POSTGRES_PASSWORD: fixu_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fixu_password}
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - private_net
 
-  flask_app:
+  redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - private_net
+    # Sin puertos expuestos al host: solo accesible en la red privada
+
+  flask_app_1: &flask_app
     build:
       context: .
       dockerfile: flask_app.Dockerfile
     restart: always
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
-      SECRET_KEY: dev-secret-change-me
+      - redis
+    environment: &flask_env
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
       FIXU_BOOTSTRAP_DB: "1"
-      HMAC_SECRET_KEY: internal-hmac-secret-key
-    ports:
-      - "5000:5000"
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
+      LARAVEL_ADMIN_URL: http://laravel_admin:80
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    networks:
+      - private_net
+
+  flask_app_2:
+    <<: *flask_app
+    environment:
+      <<: *flask_env
+      FIXU_BOOTSTRAP_DB: "0"  # solo la réplica 1 hace bootstrap inicial
 
   laravel_admin:
     build:
@@ -37,27 +59,98 @@ services:
       DB_PORT: 5432
       DB_DATABASE: fixu
       DB_USERNAME: fixu_user
-      DB_PASSWORD: fixu_password
-    ports:
-      - "8000:80"
+      DB_PASSWORD: ${DB_PASSWORD:-fixu_password}
+    networks:
+      - private_net
 
-  bridge_api:
+  bridge_api_1: &bridge_api
     build:
       context: ./bridge_api
       dockerfile: ../bridge_api.Dockerfile
     restart: always
     depends_on:
       - db
-      - flask_app
+      - redis
+      - flask_app_1
       - laravel_admin
-    environment:
-      FLASK_APP_URL: http://flask_app:5000
+    environment: &bridge_env
+      FLASK_APP_URL: http://flask_app_1:5000
       LARAVEL_ADMIN_URL: http://laravel_admin:80
-      INTERNAL_API_KEY: internal-bridge-secret-key
-      DATABASE_URL: postgresql://fixu_user:fixu_password@db:5432/fixu
-      HMAC_SECRET_KEY: internal-hmac-secret-key
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    networks:
+      - private_net
+
+  bridge_api_2:
+    <<: *bridge_api
+    environment:
+      <<: *bridge_env
+      FLASK_APP_URL: http://flask_app_2:5000
+
+  # ---------------- Servidor Público / DMZ ----------------
+  nginx:
+    image: nginx:alpine
+    restart: always
+    depends_on:
+      - flask_app_1
+      - flask_app_2
+      - bridge_api_1
+      - bridge_api_2
+      - laravel_admin
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "8404:8404"
     volumes:
-      - ./bridge_api:/app
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/ssl:/etc/nginx/ssl:ro
+    networks:
+      - private_net
+      - public_net
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:1.1
+    restart: always
+    command: ["--nginx.scrape-uri=http://nginx:8404/nginx_status"]
+    depends_on:
+      - nginx
+    networks:
+      - private_net
+    # Sin puertos publicados: solo lo consume Prometheus por la red privada
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    ports:
+      - "8405:9090"   # Único puerto de métricas autorizado por la rúbrica
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - private_net
+      - public_net
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    environment:
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    depends_on:
+      - prometheus
+    networks:
+      - private_net
+    # Sin puerto publicado directo: se accede vía Nginx en /grafana (puerto 80/443)
+
+networks:
+  private_net:
+    driver: bridge
+    internal: false
+  public_net:
+    driver: bridge
 
 volumes:
   db-data:

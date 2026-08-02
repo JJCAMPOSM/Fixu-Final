@@ -7,7 +7,7 @@ import os
 from typing import Optional
 
 from config import Settings, get_settings
-from routers import sync, bridge, webhooks
+from routers import sync, bridge, webhooks, mobile
 
 
 @asynccontextmanager
@@ -61,6 +61,7 @@ async def ip_whitelist_middleware(request: Request, call_next):
 app.include_router(sync.router, prefix="/sync", tags=["sincronización"])
 app.include_router(bridge.router, prefix="/bridge", tags=["bridge"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
+app.include_router(mobile.router, prefix="/mobile", tags=["app-móvil"])
 
 
 @app.get("/health")
@@ -79,6 +80,7 @@ async def root():
             "sync": "/sync",
             "bridge": "/bridge",
             "webhooks": "/webhooks",
+            "mobile": "/mobile",
             "health": "/health",
             "docs": "/docs"
         }

@@ -1,0 +1,96 @@
+# Se ejecuta en el SERVIDOR PRIVADO (solo IP privada, ver DEPLOY_RUBRICA.md).
+# Publica los servicios en la IP privada del servidor para que el Nginx del
+# servidor público (docker-compose.public.yml) pueda alcanzarlos.
+#
+# Uso: docker compose -f deploy/docker-compose.private.yml up -d --build
+# Ejecutar desde la raíz del repo.
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: fixu
+      POSTGRES_USER: fixu_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fixu_password}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"   # Solo alcanzable dentro de la red privada de la nube (ver guía Nmap)
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"   # Solo alcanzable dentro de la red privada de la nube
+
+  flask_app_1: &flask_app
+    build:
+      context: ..
+      dockerfile: flask_app.Dockerfile
+    restart: always
+    depends_on: [db, redis]
+    environment: &flask_env
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
+      FIXU_BOOTSTRAP_DB: "1"
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
+      LARAVEL_ADMIN_URL: http://laravel_admin:80
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "5001:5000"
+
+  flask_app_2:
+    <<: *flask_app
+    environment:
+      <<: *flask_env
+      FIXU_BOOTSTRAP_DB: "0"
+    ports:
+      - "5002:5000"
+
+  laravel_admin:
+    build:
+      context: ..
+      dockerfile: laravel_admin.Dockerfile
+    restart: always
+    depends_on: [db]
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: fixu
+      DB_USERNAME: fixu_user
+      DB_PASSWORD: ${DB_PASSWORD:-fixu_password}
+    ports:
+      - "8000:80"
+
+  bridge_api_1: &bridge_api
+    build:
+      context: ../bridge_api
+      dockerfile: ../bridge_api.Dockerfile
+    restart: always
+    depends_on: [db, redis, flask_app_1, laravel_admin]
+    environment: &bridge_env
+      FLASK_APP_URL: http://flask_app_1:5000
+      LARAVEL_ADMIN_URL: http://laravel_admin:80
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "8001:8000"
+
+  bridge_api_2:
+    <<: *bridge_api
+    environment:
+      <<: *bridge_env
+      FLASK_APP_URL: http://flask_app_2:5000
+    ports:
+      - "8002:8000"
+
+volumes:
+  db-data:

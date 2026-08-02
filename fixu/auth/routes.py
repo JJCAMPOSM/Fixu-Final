@@ -5,9 +5,11 @@ from . import bp
 from .forms import LoginForm, RegisterForm
 from ..extensions import db
 from ..models import User, Requester
+from ..rate_limiter import rate_limit
 
 
 @bp.route('/login', methods=['GET', 'POST'])
+@rate_limit(limit=6, window=60)
 def login():
     if current_user.is_authenticated:
         if current_user.role == 'admin':

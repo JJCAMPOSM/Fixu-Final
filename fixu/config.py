@@ -14,3 +14,15 @@ class Config:
     
     # URL del panel de administración Laravel
     LARAVEL_ADMIN_URL = os.environ.get('LARAVEL_ADMIN_URL', 'http://localhost:8000')
+
+    # JWT para la App Móvil
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+    JWT_EXP_HOURS = int(os.environ.get('JWT_EXP_HOURS', '12'))
+
+    # Redis para Rate Limiting global
+    REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
+    REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
+
+    # Subida de fotos de tickets (App Móvil)
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads/tickets')
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB por request

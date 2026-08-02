@@ -87,6 +87,8 @@ class Ticket(db.Model, TimestampMixin):
     status = db.Column(db.String(20), nullable=False, default='open')  # open|pending|solved|closed
     priority = db.Column(db.String(20), nullable=False, default='medium')  # low|medium|high
     rating = db.Column(db.Integer, nullable=False, default=0)
+    photo_path = db.Column(db.String(255), nullable=True)  # foto adjunta desde la App Móvil
+    source = db.Column(db.String(20), nullable=False, default='web')  # web|mobile
 
     requester = db.relationship('Requester', back_populates='tickets')
     team = db.relationship('Team', back_populates='tickets')
