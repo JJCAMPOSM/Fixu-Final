@@ -11,6 +11,10 @@ scrape_configs:
     static_configs:
       - targets: ['nginx_exporter:9113']
 
+  - job_name: 'ufw_exporter'
+    static_configs:
+      - targets: ['ufw_exporter:9092']
+
   # Reemplaza <IP_PRIVADA> por la IP privada real del servidor privado
   - job_name: 'flask_app'
     metrics_path: /api/metrics

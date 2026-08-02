@@ -23,6 +23,12 @@ services:
     command: ["--nginx.scrape-uri=http://nginx:8404/nginx_status"]
     depends_on: [nginx]
 
+  ufw_exporter:
+    build: ./ufw_exporter
+    restart: always
+    volumes:
+      - /var/log/ufw.log:/var/log/ufw.log:ro
+
   prometheus:
     image: prom/prometheus:latest
     restart: always
