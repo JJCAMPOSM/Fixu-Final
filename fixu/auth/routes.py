@@ -13,8 +13,7 @@ from ..rate_limiter import rate_limit
 def login():
     if current_user.is_authenticated:
         if current_user.role == 'admin':
-            from flask import current_app
-            return redirect(current_app.config.get('LARAVEL_ADMIN_URL', 'http://localhost:8000') + '/admin')
+            return redirect('/admin')
         return redirect(url_for('tickets.index'))
 
     form = LoginForm()
@@ -23,10 +22,9 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember.data)
-            # Admin → redirigir a Laravel Admin Panel
+            # Admin → redirigir a Laravel Admin Panel (ruta relativa, nginx la enruta a Laravel)
             if user.role == 'admin':
-                from flask import current_app
-                return redirect(current_app.config.get('LARAVEL_ADMIN_URL', 'http://localhost:8000') + '/admin')
+                return redirect('/admin')
             # Asegurar perfil de solicitante si aplica
             if user.role == 'requester':
                 req = Requester.query.filter_by(email=user.email).first()
