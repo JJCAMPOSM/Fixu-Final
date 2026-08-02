@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, request, url_for
 
 from .config import Config
 from .extensions import db, migrate, login_manager, csrf
@@ -57,6 +57,16 @@ def create_app():
             csrf_token=generate_csrf,
             laravel_admin_url=app.config.get('LARAVEL_ADMIN_URL', '')
         )
+
+    # Evitar que el navegador cachee páginas autenticadas: sin esto, el botón
+    # "atrás" puede mostrar una página de sesión iniciada (ej. panel de admin)
+    # después de haber cerrado sesión.
+    @app.after_request
+    def no_cache_authenticated_pages(response):
+        if not request.path.startswith('/static'):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+            response.headers['Pragma'] = 'no-cache'
+        return response
 
     with app.app_context():
         if os.environ.get('FIXU_BOOTSTRAP_DB', '0') == '1':
