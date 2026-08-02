@@ -5,12 +5,14 @@ import * as SecureStore from 'expo-secure-store';
 import LoginScreen from './src/screens/LoginScreen';
 import TicketsScreen from './src/screens/TicketsScreen';
 import NewTicketScreen from './src/screens/NewTicketScreen';
+import TicketDetailScreen from './src/screens/TicketDetailScreen';
 
 export default function App() {
   const [booting, setBooting] = useState(true);
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState('tickets'); // 'tickets' | 'new'
+  const [screen, setScreen] = useState('tickets'); // 'tickets' | 'new' | 'detail'
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -41,7 +43,7 @@ export default function App() {
 
   if (booting) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111827' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6' }}>
         <ActivityIndicator color="#4f46e5" size="large" />
       </View>
     );
@@ -49,7 +51,7 @@ export default function App() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#111827" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f3f4f6" />
       {!token ? (
         <LoginScreen onLoggedIn={handleLoggedIn} />
       ) : screen === 'new' ? (
@@ -58,11 +60,20 @@ export default function App() {
           onCreated={() => setScreen('tickets')}
           onCancel={() => setScreen('tickets')}
         />
+      ) : screen === 'detail' && selectedTicket ? (
+        <TicketDetailScreen
+          ticket={selectedTicket}
+          onBack={() => setScreen('tickets')}
+        />
       ) : (
         <TicketsScreen
           token={token}
           user={user}
           onNewTicket={() => setScreen('new')}
+          onOpenTicket={(ticket) => {
+            setSelectedTicket(ticket);
+            setScreen('detail');
+          }}
           onLogout={handleLogout}
         />
       )}

@@ -40,6 +40,8 @@ services:
       LARAVEL_ADMIN_URL: http://laravel_admin:80
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+    volumes:
+      - uploads-data:/app/fixu/static/uploads
     ports:
       - "5001:5000"
 
@@ -94,3 +96,4 @@ services:
 
 volumes:
   db-data:
+  uploads-data:

@@ -4,3 +4,8 @@ __pycache__/
 instance/
 *.db
 .env
+
+# App móvil (Expo)
+mobile_app/node_modules/
+mobile_app/.expo/
+mobile_app/package-lock.json

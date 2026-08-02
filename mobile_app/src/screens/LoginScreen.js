@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { login } from '../api';
+import { colors } from '../theme';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,43 +37,65 @@ export default function LoginScreen({ onLoggedIn }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Fixu Campo</Text>
-      <Text style={styles.subtitle}>Herramienta para agentes de soporte</Text>
+      <View style={styles.logoWrap}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoEmoji}>🔧</Text>
+        </View>
+        <Text style={styles.title}>FixU Campo</Text>
+        <Text style={styles.subtitle}>Herramienta de campo para agentes de soporte</Text>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Correo"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.card}>
+        <Text style={styles.label}>Correo</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="correo@fixu.local"
+          placeholderTextColor={colors.textMuted}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <Text style={styles.label}>Contraseña</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="••••••••"
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      {!!error && <Text style={styles.error}>{error}</Text>}
+        {!!error && <Text style={styles.error}>{error}</Text>}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar sesión</Text>}
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Iniciar sesión</Text>}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#111827' },
-  title: { fontSize: 28, fontWeight: '700', color: '#fff', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#9ca3af', textAlign: 'center', marginBottom: 32 },
-  input: {
-    backgroundColor: '#1f2937', color: '#fff', borderRadius: 10, padding: 14,
-    marginBottom: 12, fontSize: 16, borderWidth: 1, borderColor: '#374151',
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.background },
+  logoWrap: { alignItems: 'center', marginBottom: 28 },
+  logoCircle: {
+    width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
   },
-  button: { backgroundColor: '#4f46e5', borderRadius: 10, padding: 14, marginTop: 8 },
+  logoEmoji: { fontSize: 30 },
+  title: { fontSize: 26, fontWeight: '700', color: colors.text },
+  subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, paddingHorizontal: 20 },
+  card: {
+    backgroundColor: colors.surface, borderRadius: 16, padding: 20,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2,
+  },
+  label: { color: colors.textMuted, fontSize: 13, marginBottom: 6, marginTop: 10 },
+  input: {
+    backgroundColor: colors.background, color: colors.text, borderRadius: 10, padding: 14,
+    fontSize: 16, borderWidth: 1, borderColor: colors.border,
+  },
+  button: { backgroundColor: colors.primary, borderRadius: 10, padding: 14, marginTop: 20 },
   buttonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 16 },
-  error: { color: '#f87171', marginBottom: 8 },
+  error: { color: colors.danger, marginTop: 10 },
 });

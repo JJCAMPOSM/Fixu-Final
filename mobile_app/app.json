@@ -5,24 +5,33 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#111827"
+      "backgroundColor": "#f3f4f6"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.fixu.campo",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.fixu.campo",
       "infoPlist": {
-        "NSCameraUsageDescription": "Fixu necesita la cámara para adjuntar fotos de fallas a los tickets.",
-        "NSPhotoLibraryUsageDescription": "Fixu necesita acceso a fotos para adjuntar imágenes a los tickets."
+        "NSCameraUsageDescription": "Fixu necesita la cámara para capturar evidencia en sitio de las fallas reportadas.",
+        "NSLocationWhenInUseUsageDescription": "Fixu usa tu ubicación para confirmar que el reporte se generó en el sitio de la falla."
       }
     },
     "extra": {
       "apiUrl": "http://localhost:8080"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
