@@ -44,7 +44,7 @@ http {
         }
 
         location /grafana/ {
-            proxy_pass http://grafana_backend/;
+            proxy_pass http://grafana_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
         }
