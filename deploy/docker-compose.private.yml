@@ -38,7 +38,7 @@ services:
       HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
       LARAVEL_ADMIN_URL: http://laravel_admin:80
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://167.172.144.30}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
     volumes:
