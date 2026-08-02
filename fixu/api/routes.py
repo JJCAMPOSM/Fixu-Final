@@ -17,6 +17,20 @@ from ..services.bridge_client import get_bridge_client
 from ..rate_limiter import rate_limit
 
 
+def _public_photo_url(photo_path):
+    """Construye una URL de foto alcanzable desde la App Móvil.
+
+    No se usa url_for(..., _external=True): las peticiones móviles llegan a
+    Flask vía bridge_api con Host interno (ej. flask_app_1:5000), así que la
+    URL externa resultante apuntaría a un hostname de Docker no resoluble
+    desde el teléfono. En su lugar se usa PUBLIC_BASE_URL (nginx público).
+    """
+    if not photo_path:
+        return None
+    static_path = url_for('static', filename=photo_path)
+    return current_app.config['PUBLIC_BASE_URL'].rstrip('/') + static_path
+
+
 def require_api_key(f):
     """Decorador para proteger endpoints de API interna con API Key y firma HMAC."""
     @wraps(f)
@@ -464,7 +478,7 @@ def mobile_create_ticket():
         'title': ticket.title,
         'status': ticket.status,
         'priority': ticket.priority,
-        'photo_url': url_for('static', filename=photo_path, _external=True) if photo_path else None,
+        'photo_url': _public_photo_url(photo_path),
         'created_at': ticket.created_at.isoformat(),
     }), 201
 
@@ -487,7 +501,7 @@ def mobile_list_tickets():
         'body': t.body,
         'status': t.status,
         'priority': t.priority,
-        'photo_url': url_for('static', filename=t.photo_path, _external=True) if t.photo_path else None,
+        'photo_url': _public_photo_url(t.photo_path),
         'created_at': t.created_at.isoformat(),
     } for t in tickets])
 

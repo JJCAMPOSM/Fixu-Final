@@ -26,3 +26,10 @@ class Config:
     # Subida de fotos de tickets (App Móvil)
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads/tickets')
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB por request
+
+    # URL pública (nginx en el servidor público) usada para construir enlaces
+    # absolutos a archivos estáticos (fotos de tickets) devueltos a la App Móvil.
+    # Las peticiones llegan a Flask vía bridge_api con Host interno
+    # (ej. flask_app_1:5000), así que url_for(..., _external=True) generaría
+    # una URL no alcanzable desde el teléfono si no se fija explícitamente.
+    PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL', 'http://localhost')
