@@ -10,12 +10,14 @@
             {{ form.hidden_tag() }}
 
             {% set agent_edit = mode == 'edit' and current_user.role == 'agent' %}
+            {% set admin_edit = mode == 'edit' and current_user.role == 'admin' %}
+            {% set locked_edit = agent_edit or admin_edit %}
 
             <div class="mb-3">
                 <label class="form-label required-field">{{ form.title.label }}</label>
-                {{ form.title(class='form-control', required=True, minlength=3, maxlength=200, readonly=agent_edit) }}
+                {{ form.title(class='form-control', required=True, minlength=3, maxlength=200, readonly=locked_edit) }}
                 {% for e in form.title.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                {% if agent_edit %}<div class="form-text">Solo el administrador puede editar el título.</div>{% endif %}
+                {% if locked_edit %}<div class="form-text">Este campo lo define el solicitante y no se puede editar después de creado el ticket.</div>{% endif %}
             </div>
 
             <div class="mb-3">
@@ -23,44 +25,32 @@
                 {% if current_user.role == 'requester' %}
                 {{ form.body(class='form-control', required=True, minlength=10, rows=5, placeholder='Describe el problema detalladamente. Por favor especifica el aula donde se presentó el problema.') }}
                 {% else %}
-                {{ form.body(class='form-control', required=True, minlength=10, rows=5, readonly=agent_edit) }}
+                {{ form.body(class='form-control', required=True, minlength=10, rows=5, readonly=locked_edit) }}
                 {% endif %}
                 {% for e in form.body.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                {% if agent_edit %}<div class="form-text">Solo el administrador puede editar la descripción.</div>{% endif %}
+                {% if locked_edit %}<div class="form-text">Este campo lo define el solicitante y no se puede editar después de creado el ticket.</div>{% endif %}
             </div>
 
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.building.label }}</label>
-                    {{ form.building(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {{ form.building(class='form-select', required=(current_user.role == 'requester'), disabled=locked_edit) }}
                     {% for e in form.building.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
                 <div class="col-md-4">
                     <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.classroom.label }}</label>
-                    {{ form.classroom(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {{ form.classroom(class='form-select', required=(current_user.role == 'requester'), disabled=locked_edit) }}
                     {% for e in form.classroom.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
                 <div class="col-md-4">
                     <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.equipment_type.label }}</label>
-                    {{ form.equipment_type(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {{ form.equipment_type(class='form-select', required=(current_user.role == 'requester'), disabled=locked_edit) }}
                     {% for e in form.equipment_type.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
             </div>
 
-            {% if mode == 'edit' and current_user.role == 'admin' %}
+            {% if admin_edit %}
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">{{ form.requester_id.label }}</label>
-                    {{ form.requester_id(class='form-select') }}
-                    {% for e in form.requester_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">{{ form.category_id.label }}</label>
-                    {{ form.category_id(class='form-select') }}
-                    {% for e in form.category_id.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                </div>
-
                 <div class="col-md-6">
                     <label class="form-label">{{ form.team_id.label }}</label>
                     {{ form.team_id(class='form-select', id='team-select') }}
@@ -73,14 +63,8 @@
                     {% for e in form.assignee_team_member_id.errors %}<div class="text-danger small">{{ e }}</div>{%
                     endfor %}
                 </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">{{ form.status.label }}</label>
-                    {{ form.status(class='form-select') }}
-                    {% for e in form.status.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                </div>
             </div>
-            {% elif mode == 'edit' and current_user.role == 'agent' %}
+            {% elif agent_edit %}
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ form.status.label }}</label>
@@ -92,7 +76,7 @@
 
             <div class="mb-3">
                 <label class="form-label">{{ form.priority.label }}</label>
-                {{ form.priority(class='form-select', disabled=agent_edit) }}
+                {{ form.priority(class='form-select', disabled=locked_edit) }}
                 {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
             </div>
 

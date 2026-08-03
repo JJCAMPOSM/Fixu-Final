@@ -273,10 +273,9 @@ def edit(ticket_id):
                 ]
 
     if form.validate_on_submit():
-        new_status = form.status.data
-
         if is_agent():
             # Un agente comprometido no puede tocar nada más que el estado.
+            new_status = form.status.data
             _mark_resolved_if_needed(ticket, new_status)
             ticket.status = new_status
             db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
@@ -284,30 +283,25 @@ def edit(ticket_id):
             flash('Ticket actualizado.', 'success')
             return redirect(url_for('tickets.show', ticket_id=ticket.id))
 
+        # El admin solo asigna equipo/agente: no reasigna solicitante/categoría,
+        # no edita el contenido del ticket (eso lo define el solicitante al
+        # crearlo) ni el estado (eso lo maneja el agente una vez asignado).
         assignee_value = form.assignee_team_member_id.data or 0
         team_value = form.team_id.data or 0
-        category_value = form.category_id.data or 0
         new_assignee = assignee_value if assignee_value != 0 else None
 
         # Al asignar un agente a un ticket que seguía "pendiente", el estado
-        # avanza automáticamente a "asignado" (salvo que el admin ya lo haya
-        # movido explícitamente a un estado más avanzado).
-        if new_assignee is not None and new_status == 'pending':
+        # avanza automáticamente a "asignado".
+        if new_assignee is not None and ticket.status == 'pending':
             new_status = 'assigned'
+        else:
+            new_status = ticket.status
 
         _mark_resolved_if_needed(ticket, new_status)
 
-        ticket.title = form.title.data.strip()
-        ticket.body = form.body.data.strip()
-        ticket.requester_id = form.requester_id.data
-        ticket.category_id = category_value if category_value != 0 else None
         ticket.team_id = team_value if team_value != 0 else None
         ticket.assignee_team_member_id = new_assignee
         ticket.status = new_status
-        ticket.priority = form.priority.data
-        ticket.building = form.building.data or None
-        ticket.classroom = form.classroom.data or None
-        ticket.equipment_type = form.equipment_type.data or None
         db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
         db.session.commit()
         flash('Ticket actualizado.', 'success')
