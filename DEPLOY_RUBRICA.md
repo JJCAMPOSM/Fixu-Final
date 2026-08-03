@@ -25,6 +25,11 @@ git clone <URL_DE_TU_REPO> fixu && cd fixu
 git checkout borrador-rubrica   # o la rama final una vez mergeado
 cp .env.example .env
 nano .env   # cambia todas las contraseñas/claves
+
+# ENCRYPTION_KEY necesita un formato específico (Fernet), no puede ser
+# cualquier cadena aleatoria como las demás claves. Generarla con:
+#   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# y pegar el resultado en .env como ENCRYPTION_KEY=...
 ```
 
 ## 3. Certificado SSL (autofirmado, autorizado por la guía)

@@ -45,12 +45,22 @@ class Config:
     HMAC_SECRET_KEY = _require_env('HMAC_SECRET_KEY')
     INTERNAL_API_KEY = _require_env('INTERNAL_API_KEY')
 
+    # Cifrado simétrico (Fernet/AES) de campos sensibles en reposo (ej. teléfono
+    # del solicitante). Distinto del hasheo de contraseñas: aquí necesitamos
+    # poder recuperar el valor original. Generar con:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    ENCRYPTION_KEY = _require_env('ENCRYPTION_KEY')
+
     # Redis para Rate Limiting global
     REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
     REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
 
-    # Subida de fotos de tickets (App Móvil)
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'static/uploads/tickets')
+    # Subida de fotos de tickets (App Móvil). Debe vivir FUERA de static/: Flask
+    # registra automáticamente la ruta /static/<path:filename> sin autenticación,
+    # así que si UPLOAD_FOLDER estuviera dentro de static/ cualquiera con el
+    # nombre de archivo podría descargar la foto sin pasar por el control de
+    # acceso de /api/uploads/tickets/<filename>.
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads/tickets')
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB por request
 
     # URL pública (nginx en el servidor público) usada para construir enlaces

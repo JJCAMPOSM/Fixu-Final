@@ -34,12 +34,13 @@ services:
       FIXU_BOOTSTRAP_DB: "1"
       HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:?HMAC_SECRET_KEY es obligatoria, definila en .env}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY es obligatoria, definila en .env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY es obligatoria, definila en .env}
       LARAVEL_ADMIN_URL: http://laravel_admin:80
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://167.172.144.30}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
     volumes:
-      - uploads-data:/app/fixu/static/uploads
+      - uploads-data:/app/fixu/uploads
     networks:
       - private_net
 

@@ -37,15 +37,35 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             $ticket->id,
-            $ticket->title,
-            $ticket->body,
+            $this->sanitizeCell($ticket->title),
+            $this->sanitizeCell($ticket->body),
             ucfirst($ticket->status),
             ucfirst($ticket->priority),
-            $ticket->requester ? $ticket->requester->name : 'N/A',
-            $ticket->category ? $ticket->category->name : 'N/A',
-            $ticket->team ? $ticket->team->name : 'N/A',
-            ($ticket->assignee && $ticket->assignee->user) ? $ticket->assignee->user->name : 'N/A',
+            $ticket->requester ? $this->sanitizeCell($ticket->requester->name) : 'N/A',
+            $ticket->category ? $this->sanitizeCell($ticket->category->name) : 'N/A',
+            $ticket->team ? $this->sanitizeCell($ticket->team->name) : 'N/A',
+            ($ticket->assignee && $ticket->assignee->user) ? $this->sanitizeCell($ticket->assignee->user->name) : 'N/A',
             $ticket->created_at->format('Y-m-d H:i:s'),
         ];
+    }
+
+    /**
+     * Evita inyección de fórmulas en Excel: título/descripción/nombres son texto
+     * libre escrito por solicitantes (rol de bajo privilegio) y se vuelcan tal
+     * cual a celdas del .xlsx que luego abre un admin. Si el valor empieza con
+     * un carácter que Excel interpreta como inicio de fórmula (=, +, -, @) o
+     * un tab/CR, se antepone un apóstrofe para forzar que se trate como texto.
+     */
+    private function sanitizeCell(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        if (preg_match('/^[=+\-@\t\r]/', $value)) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 }

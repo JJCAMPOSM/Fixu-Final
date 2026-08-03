@@ -3,6 +3,7 @@ from flask_login import UserMixin
 import bcrypt
 
 from .extensions import db
+from .crypto import EncryptedString
 
 
 class TimestampMixin:
@@ -60,7 +61,9 @@ class Requester(db.Model, TimestampMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
-    phone = db.Column(db.String(20), nullable=True)
+    # Cifrado en reposo (Fernet, ver crypto.py): dato personal (PII) que solo
+    # se usa para mostrarlo/contactar, nunca para filtrar/buscar en BD.
+    phone = db.Column(EncryptedString, nullable=True)
 
     tickets = db.relationship('Ticket', back_populates='requester')
 
