@@ -3,7 +3,14 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
-    
+
+    # Cookie de sesión: no accesible por JS, no enviada por HTTP plano
+    # (excepto en desarrollo local, donde no hay HTTPS disponible).
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', '0') == '1'
+    PREFERRED_URL_SCHEME = os.environ.get('PREFERRED_URL_SCHEME', 'https')
+
     # Soporte para PostgreSQL (Render y Docker)
     db_uri = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///fixu.db')
     if db_uri.startswith("postgres://"):

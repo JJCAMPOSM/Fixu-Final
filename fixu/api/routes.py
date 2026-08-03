@@ -15,7 +15,8 @@ from .. import db
 from ..extensions import csrf
 from ..models import TeamMember, SatisfactionTicket, Ticket, User, Team, Requester, Category, TicketEvent
 from ..services.bridge_client import get_bridge_client
-from ..rate_limiter import rate_limit
+from ..rate_limiter import rate_limit, get_redis
+import redis as _redis_module
 
 
 def _public_photo_url(photo_path):
@@ -321,10 +322,28 @@ def _issue_jwt(user: User) -> str:
         'sub': user.id,
         'email': user.email,
         'role': user.role,
+        'jti': uuid.uuid4().hex,
         'exp': datetime.utcnow() + timedelta(hours=current_app.config.get('JWT_EXP_HOURS', 12)),
         'iat': datetime.utcnow(),
     }
     return pyjwt.encode(payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
+
+
+def _blacklist_key(jti: str) -> str:
+    return f'jwt_blacklist:{jti}'
+
+
+def _blacklist_jwt(payload: dict) -> None:
+    """Invalida un JWT antes de su expiración natural (usado en logout)."""
+    jti = payload.get('jti')
+    if not jti:
+        return
+    exp = payload.get('exp')
+    ttl = max(int(exp - datetime.utcnow().timestamp()), 1) if exp else 3600
+    try:
+        get_redis().set(_blacklist_key(jti), '1', ex=ttl)
+    except _redis_module.RedisError:
+        current_app.logger.warning('Redis no disponible, no se pudo invalidar el JWT')
 
 
 def jwt_required(f):
@@ -342,10 +361,17 @@ def jwt_required(f):
         except pyjwt.InvalidTokenError:
             return jsonify({'error': 'Token inválido'}), 401
 
+        try:
+            if payload.get('jti') and get_redis().exists(_blacklist_key(payload['jti'])):
+                return jsonify({'error': 'Token inválido'}), 401
+        except _redis_module.RedisError:
+            current_app.logger.warning('Redis no disponible, se omitió el chequeo de blacklist de JWT')
+
         user = User.query.get(payload.get('sub'))
         if not user:
             return jsonify({'error': 'Usuario no encontrado'}), 401
         request.jwt_user = user
+        request.jwt_payload = payload
         return f(*args, **kwargs)
     return decorated
 
@@ -420,6 +446,15 @@ def mobile_register():
 def mobile_me():
     user = request.jwt_user
     return jsonify({'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role})
+
+
+@bp.post('/mobile/logout')
+@csrf.exempt
+@jwt_required
+def mobile_logout():
+    """Invalida el JWT actual (logout real, no solo borrarlo del teléfono)."""
+    _blacklist_jwt(request.jwt_payload)
+    return jsonify({'success': True})
 
 
 def _save_ticket_photo(photo_b64: str) -> str:
@@ -547,4 +582,40 @@ def mobile_list_tickets():
         'photo_url': _public_photo_url(t.photo_path),
         'created_at': t.created_at.isoformat(),
     } for t in tickets])
+
+
+@bp.post('/tickets/<int:ticket_id>/feedback')
+@login_required
+def submit_feedback(ticket_id):
+    """Calificación de satisfacción (Web). Solo el solicitante dueño del ticket, y solo si está cerrado."""
+    if current_user.role != 'requester':
+        return jsonify({'error': 'Solo los solicitantes pueden calificar tickets.'}), 403
+
+    ticket = Ticket.query.get_or_404(ticket_id)
+    requester = Requester.query.filter_by(email=current_user.email).first()
+    if not requester or ticket.requester_id != requester.id:
+        return jsonify({'error': 'No autorizado.'}), 403
+
+    if ticket.status != 'closed':
+        return jsonify({'error': 'Solo se puede calificar un ticket cerrado.'}), 400
+
+    if SatisfactionTicket.query.filter_by(ticket_id=ticket.id).first():
+        return jsonify({'error': 'Ya se envió feedback para este ticket.'}), 409
+
+    data = request.get_json(silent=True) or {}
+    calificacion = data.get('calificacion')
+    if not isinstance(calificacion, int) or calificacion < 1 or calificacion > 5:
+        return jsonify({'error': 'calificacion debe ser un entero entre 1 y 5.'}), 400
+    comentario = (data.get('comentario') or '').strip()[:2000] or None
+
+    feedback = SatisfactionTicket(
+        ticket_id=ticket.id,
+        user_id=current_user.id,
+        calificacion=calificacion,
+        comentario=comentario,
+    )
+    ticket.rating = calificacion
+    db.session.add(feedback)
+    db.session.commit()
+    return jsonify({'success': True}), 201
 

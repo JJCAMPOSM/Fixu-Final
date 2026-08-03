@@ -31,6 +31,9 @@ def rate_limit(limit=6, window=60):
         def wrapped(*args, **kwargs):
             try:
                 r = get_redis()
+                # request.remote_addr ya refleja la IP real del cliente gracias
+                # a ProxyFix (fixu/__init__.py), que confía en el X-Forwarded-For
+                # que agrega nginx (único proxy intermedio).
                 identity = request.headers.get('Authorization', request.remote_addr or '127.0.0.1')
                 key = f"rate_limit:{identity}:{request.endpoint}"
 

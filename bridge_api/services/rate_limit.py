@@ -16,12 +16,25 @@ def _get_redis(settings: Settings) -> redis.Redis:
     return _redis_client
 
 
+def _real_client_ip(request: Request) -> str:
+    """IP real del cliente detrás de nginx (único proxy de confianza).
+
+    request.client.host sin esto siempre es la IP interna de nginx (la misma
+    para todos los usuarios), lo que hace que el rate limit por IP se
+    comparta entre todo el mundo en vez de aplicarse por cliente real.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 def rate_limit_dependency(limit: int = 6, window: int = 60):
     """Rate Limiting global con Redis para endpoints públicos de bridge_api (App Móvil)."""
     async def _dependency(request: Request, settings: Settings = Depends(get_settings)):
         try:
             r = _get_redis(settings)
-            identity = request.headers.get("authorization") or (request.client.host if request.client else "unknown")
+            identity = request.headers.get("authorization") or _real_client_ip(request)
             key = f"rate_limit:{identity}:{request.url.path}"
 
             current = r.get(key)

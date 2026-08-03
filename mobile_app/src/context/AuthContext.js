@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { login as apiLogin, register as apiRegister } from '../api';
+import { login as apiLogin, register as apiRegister, logout as apiLogout } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -39,6 +39,11 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    try {
+      if (token) await apiLogout(token);
+    } catch (e) {
+      // Si el servidor no responde, igual cerramos sesión localmente
+    }
     await SecureStore.deleteItemAsync('fixu_token');
     await SecureStore.deleteItemAsync('fixu_user');
     setToken(null);

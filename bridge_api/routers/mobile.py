@@ -69,6 +69,16 @@ async def mobile_me(
     return await _forward_to_flask(http_client, settings, "GET", "me", authorization, None)
 
 
+@router.post("/logout")
+async def mobile_logout(
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Invalida el JWT actual (logout real vía blacklist en Redis)."""
+    return await _forward_to_flask(http_client, settings, "POST", "logout", authorization, {})
+
+
 @router.post("/tickets", dependencies=[Depends(rate_limit_dependency(limit=6, window=60))])
 async def mobile_create_ticket(
     payload: dict = Body(...),

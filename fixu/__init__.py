@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask, redirect, request, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
 from .extensions import db, migrate, login_manager, csrf
@@ -13,6 +14,12 @@ def create_app():
 
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(Config)
+
+    # Detrás de nginx solo hay UN proxy de confianza (el reverse proxy del
+    # servidor público). Sin esto, request.remote_addr siempre es la IP
+    # interna de nginx (misma para todos los usuarios), lo que rompe el
+    # rate limiting por IP y cualquier lógica que dependa de la IP real.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # Asegurar carpeta instance
     os.makedirs(app.instance_path, exist_ok=True)

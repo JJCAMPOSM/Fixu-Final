@@ -31,7 +31,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    # Sin credenciales: la API usa Bearer tokens (JWT/HMAC/API-key), no
+    # cookies, así que no hay nada que proteger con CORS credenciado.
+    # allow_origins="*" + allow_credentials=True permitiría a cualquier sitio
+    # hacer peticiones autenticadas con cookies del navegador del usuario.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

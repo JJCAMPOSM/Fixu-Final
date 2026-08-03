@@ -26,6 +26,8 @@ export const register = (name, email, password) =>
 
 export const me = (token) => request('/me', { token });
 
+export const logout = (token) => request('/logout', { method: 'POST', token });
+
 export const listTickets = (token) => request('/tickets', { token });
 
 export const createTicket = (token, { title, body, priority, photo_base64 }) =>
