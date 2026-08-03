@@ -44,7 +44,7 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.logoCircle}>
           <Text style={styles.logoEmoji}>🔧</Text>
         </View>
-        <Text style={[typography.pageTitle, { fontSize: 26 }]}>FixU Campo</Text>
+        <Text style={[typography.pageTitle, { fontSize: 26 }]}>FixU Móvil</Text>
         <Text style={styles.subtitle}>Reporta fallas desde el sitio, con evidencia fotográfica</Text>
       </View>
 

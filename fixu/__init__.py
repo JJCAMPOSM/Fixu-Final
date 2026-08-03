@@ -53,6 +53,9 @@ def create_app():
     from .api.routes import bp as api_bp
     app.register_blueprint(api_bp)
 
+    from .timezone import format_local
+    app.jinja_env.filters['local_dt'] = format_local
+
     @app.route('/')
     def home():
         return redirect(url_for('tickets.index'))
@@ -191,7 +194,7 @@ def maybe_bootstrap_db():
             requester_id=requester.id,
             team_id=team.id,
             assignee_team_member_id=member.id,
-            status='open',
+            status='assigned',
             priority='medium',
             rating=0
         )
@@ -240,7 +243,7 @@ def register_commands(app):
                 requester_id=requester.id,
                 team_id=team.id,
                 assignee_team_member_id=member.id,
-                status='open',
+                status='assigned',
                 priority='medium',
                 rating=0
             )

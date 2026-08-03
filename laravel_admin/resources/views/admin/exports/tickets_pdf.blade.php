@@ -36,7 +36,14 @@
         </thead>
         <tbody>
             @php
-                $statusLabels = ['open' => 'Abierto', 'pending' => 'Pendiente', 'solved' => 'Resuelto', 'closed' => 'Cerrado'];
+                $statusLabels = [
+                    'pending' => 'Pendiente',
+                    'assigned' => 'Asignado',
+                    'in_progress' => 'En proceso',
+                    'on_hold' => 'En espera',
+                    'cancelled' => 'Cancelado',
+                    'resolved' => 'Resuelto',
+                ];
                 $priorityLabels = ['low' => 'Baja', 'medium' => 'Media', 'high' => 'Alta'];
             @endphp
             @foreach($tickets as $ticket)

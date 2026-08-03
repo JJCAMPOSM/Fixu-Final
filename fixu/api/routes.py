@@ -21,6 +21,7 @@ from ..models import (
     MaintenanceTask, ChecklistItem, PasswordResetToken,
 )
 from ..services.bridge_client import get_bridge_client
+from ..ticket_catalog import BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES, STATUS_AGENT_CHOICES, CANCELABLE_BY_REQUESTER
 from ..rate_limiter import (
     rate_limit, get_redis, is_account_locked, register_failed_login,
     clear_failed_login, DUMMY_PASSWORD_HASH,
@@ -152,7 +153,7 @@ def sync_ticket():
                 team_id=ticket_data.get('team_id'),
                 assignee_team_member_id=ticket_data.get('assignee_team_member_id'),
                 category_id=ticket_data.get('category_id'),
-                status=ticket_data.get('status', 'open'),
+                status=ticket_data.get('status', 'pending'),
                 priority=ticket_data.get('priority', 'medium')
             )
             db.session.add(ticket)
@@ -630,6 +631,9 @@ def mobile_create_ticket():
     title = (data.get('title') or '').strip()
     body = (data.get('body') or '').strip()
     priority = data.get('priority', 'medium')
+    building = (data.get('building') or '').strip()
+    classroom = (data.get('classroom') or '').strip()
+    equipment_type = (data.get('equipment_type') or '').strip()
 
     if not title or len(title) > 200:
         return jsonify({'error': 'title es requerido (máx. 200 caracteres)'}), 400
@@ -637,6 +641,12 @@ def mobile_create_ticket():
         return jsonify({'error': 'body (descripción) es requerido'}), 400
     if priority not in ('low', 'medium', 'high'):
         return jsonify({'error': 'priority debe ser low, medium o high'}), 400
+    if building not in BUILDINGS:
+        return jsonify({'error': 'building es requerido y debe ser uno de los edificios disponibles'}), 400
+    if classroom not in CLASSROOMS:
+        return jsonify({'error': 'classroom es requerido y debe ser una de las aulas disponibles'}), 400
+    if equipment_type not in EQUIPMENT_TYPES:
+        return jsonify({'error': 'equipment_type es requerido y debe ser uno de los tipos disponibles'}), 400
 
     requester = Requester.query.filter_by(email=user.email).first()
     if not requester:
@@ -655,8 +665,11 @@ def mobile_create_ticket():
         title=title,
         body=body,
         requester_id=requester.id,
-        status='open',
+        status='pending',
         priority=priority,
+        building=building,
+        classroom=classroom,
+        equipment_type=equipment_type,
         photo_path=photo_path,
         source='mobile',
     )
@@ -685,7 +698,7 @@ def mobile_create_ticket():
         'status': ticket.status,
         'priority': ticket.priority,
         'photo_url': _public_photo_url(photo_path),
-        'created_at': ticket.created_at.isoformat(),
+        'created_at': ticket.created_at.isoformat() + 'Z',
     }), 201
 
 
@@ -719,9 +732,13 @@ def mobile_list_tickets():
         'body': t.body,
         'status': t.status,
         'priority': t.priority,
+        'building': t.building,
+        'classroom': t.classroom,
+        'equipment_type': t.equipment_type,
         'photo_url': _public_photo_url(t.photo_path),
         'resolution_photo_url': _public_photo_url(t.resolution_photo_path),
-        'created_at': t.created_at.isoformat(),
+        'created_at': t.created_at.isoformat() + 'Z',
+        'assigned': t.assignee_team_member_id is not None,
         'has_feedback': t.id in feedback_ticket_ids,
     } for t in tickets])
 
@@ -762,6 +779,62 @@ def mobile_upload_resolution_photo(ticket_id):
     })
 
 
+@bp.post('/mobile/tickets/<int:ticket_id>/cancel')
+@csrf.exempt
+@jwt_required
+@rate_limit(limit=20, window=60)
+def mobile_cancel_ticket(ticket_id):
+    """El solicitante cancela su propio ticket, solo si aún no ha sido atendido."""
+    user = request.jwt_user
+    if user.role != 'requester':
+        return jsonify({'error': 'Solo un solicitante puede cancelar su ticket'}), 403
+
+    ticket = Ticket.query.get_or_404(ticket_id)
+    requester = Requester.query.filter_by(email=user.email).first()
+    if not requester or ticket.requester_id != requester.id:
+        return jsonify({'error': 'No autorizado'}), 403
+
+    if ticket.status not in CANCELABLE_BY_REQUESTER:
+        return jsonify({'error': 'Este ticket ya está siendo atendido y no se puede cancelar'}), 400
+
+    ticket.status = 'cancelled'
+    db.session.add(TicketEvent(ticket_id=ticket.id, user_id=user.id, body='Ticket cancelado por el solicitante (App Móvil)'))
+    db.session.commit()
+    return jsonify({'id': ticket.id, 'status': ticket.status})
+
+
+_AGENT_STATUS_VALUES = {s for s, _ in STATUS_AGENT_CHOICES}
+
+
+@bp.post('/mobile/tickets/<int:ticket_id>/status')
+@csrf.exempt
+@jwt_required
+@rate_limit(limit=20, window=60)
+def mobile_update_ticket_status(ticket_id):
+    """El agente cambia el estado de un ticket que tiene asignado (en proceso,
+    en espera, cancelado o resuelto). No puede reasignarlo ni tocar otros campos."""
+    user = request.jwt_user
+    if user.role != 'agent':
+        return jsonify({'error': 'Solo un agente puede cambiar el estado del ticket'}), 403
+
+    team_member = TeamMember.query.filter_by(user_id=user.id).first()
+    ticket = Ticket.query.get_or_404(ticket_id)
+    if not team_member or ticket.assignee_team_member_id != team_member.id:
+        return jsonify({'error': 'No tenés este ticket asignado'}), 403
+
+    data = request.get_json(silent=True) or {}
+    new_status = data.get('status')
+    if new_status not in _AGENT_STATUS_VALUES:
+        return jsonify({'error': f"status debe ser uno de: {', '.join(sorted(_AGENT_STATUS_VALUES))}"}), 400
+
+    if new_status == 'resolved' and ticket.status != 'resolved':
+        ticket.resolved_at = datetime.utcnow()
+    ticket.status = new_status
+    db.session.add(TicketEvent(ticket_id=ticket.id, user_id=user.id, body='Ticket actualizado (App Móvil)'))
+    db.session.commit()
+    return jsonify({'id': ticket.id, 'status': ticket.status})
+
+
 def _submit_feedback(user, ticket_id, data):
     """Lógica compartida de calificación de satisfacción (Web y App Móvil).
     Devuelve (body, status_code)."""
@@ -775,8 +848,8 @@ def _submit_feedback(user, ticket_id, data):
     if not requester or ticket.requester_id != requester.id:
         return {'error': 'No autorizado.'}, 403
 
-    if ticket.status != 'closed':
-        return {'error': 'Solo se puede calificar un ticket cerrado.'}, 400
+    if ticket.status != 'resolved':
+        return {'error': 'Solo se puede calificar un ticket resuelto.'}, 400
 
     if SatisfactionTicket.query.filter_by(ticket_id=ticket.id).first():
         return {'error': 'Ya se envió feedback para este ticket.'}, 409
@@ -849,7 +922,7 @@ def mobile_notifications():
         'ticket_id': e.ticket_id,
         'ticket_title': e.ticket.title,
         'body': e.body,
-        'created_at': e.created_at.isoformat(),
+        'created_at': e.created_at.isoformat() + 'Z',
     } for e in events])
 
 

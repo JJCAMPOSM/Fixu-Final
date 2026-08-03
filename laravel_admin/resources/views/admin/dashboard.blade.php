@@ -26,7 +26,7 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Chart Agentes -->
     <div class="card" style="padding: 1.5rem;">
-        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Cerrados por Agente</h3>
+        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Resueltos por Agente</h3>
         <div style="height: 250px; width: 100%;">
             <canvas id="agentChart"></canvas>
         </div>
@@ -34,7 +34,7 @@
 
     <!-- Chart Equipos -->
     <div class="card" style="padding: 1.5rem;">
-        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Cerrados por Equipo</h3>
+        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Resueltos por Equipo</h3>
         <div style="height: 250px; width: 100%;">
             <canvas id="teamChart"></canvas>
         </div>
@@ -42,7 +42,7 @@
 
     <!-- Chart Categorías -->
     <div class="card" style="padding: 1.5rem;">
-        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Cerrados por Categoría</h3>
+        <h3 style="margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tickets Resueltos por Categoría</h3>
         <div style="height: 250px; width: 100%;">
             <canvas id="categoryChart"></canvas>
         </div>

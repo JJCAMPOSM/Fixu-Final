@@ -15,9 +15,9 @@ class AdminController extends Controller
         $startDate = $request->input('start_date', now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
-        // Obtener tickets cerrados / resueltos en el rango de fechas
+        // Obtener tickets resueltos en el rango de fechas
         $closedTickets = \App\Models\Ticket::with(['category', 'assignee.user', 'team'])
-            ->whereIn('status', ['closed', 'solved'])
+            ->where('status', 'resolved')
             ->whereBetween('updated_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->get();
 
@@ -214,9 +214,20 @@ class AdminController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'team_id' => 'nullable|exists:teams,id',
             'assignee_team_member_id' => 'nullable|exists:team_members,id',
-            'status' => 'required|in:open,pending,solved,closed',
+            'status' => 'required|in:pending,assigned,in_progress,on_hold,cancelled,resolved',
             'priority' => 'required|in:low,medium,high',
+            'building' => 'nullable|string|max:80',
+            'classroom' => 'nullable|string|max:80',
+            'equipment_type' => 'nullable|string|max:80',
         ]);
+
+        $assigneeId = $request->assignee_team_member_id ?: null;
+        $status = $request->status;
+        // Al asignar un agente a un ticket todavía "pendiente", el estado
+        // avanza automáticamente a "asignado" (mismo criterio que la web Flask).
+        if ($assigneeId !== null && $status === 'pending') {
+            $status = 'assigned';
+        }
 
         $ticket->update([
             'title' => $request->title,
@@ -224,9 +235,12 @@ class AdminController extends Controller
             'requester_id' => $request->requester_id,
             'category_id' => $request->category_id ?: null,
             'team_id' => $request->team_id ?: null,
-            'assignee_team_member_id' => $request->assignee_team_member_id ?: null,
-            'status' => $request->status,
+            'assignee_team_member_id' => $assigneeId,
+            'status' => $status,
             'priority' => $request->priority,
+            'building' => $request->building ?: null,
+            'classroom' => $request->classroom ?: null,
+            'equipment_type' => $request->equipment_type ?: null,
         ]);
 
         return redirect()->route('admin.tickets.index')->with('success', 'Ticket actualizado exitosamente.');

@@ -17,6 +17,9 @@ class Ticket extends Model
         'assignee_team_member_id',
         'status',
         'priority',
+        'building',
+        'classroom',
+        'equipment_type',
     ];
 
     public function requester()

@@ -11,6 +11,13 @@
         {% if current_user.role in ['admin','agent'] %}
         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('tickets.edit', ticket_id=ticket.id) }}">Editar</a>
         {% endif %}
+        {% if can_cancel %}
+        <form method="post" action="{{ url_for('tickets.cancel', ticket_id=ticket.id) }}" class="d-inline"
+            onsubmit="return confirm('¿Seguro que querés cancelar este ticket?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar ticket</button>
+        </form>
+        {% endif %}
         <a class="btn btn-sm btn-secondary" href="{{ url_for('tickets.index') }}">Volver</a>
     </div>
 </div>
@@ -19,13 +26,13 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <div class="mb-2 text-muted small">Creado: {{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="mb-2 text-muted small">Creado: {{ ticket.created_at|local_dt }}</div>
                 <div class="mb-3">{{ ticket.body|e }}</div>
                 <dl class="row mb-0">
                     <dt class="col-4 col-md-3 text-muted">Estado</dt>
                     <dd class="col-8 col-md-9 text-capitalize">
                         <span class="status-pill status-{{ ticket.status }}">
-                            {{ {'open': 'Abierto', 'pending': 'Pendiente', 'solved': 'Resuelto', 'closed': 'Cerrado'}.get(ticket.status, ticket.status) }}
+                            {{ {'pending': 'Pendiente', 'assigned': 'Asignado', 'in_progress': 'En proceso', 'on_hold': 'En espera', 'cancelled': 'Cancelado', 'resolved': 'Resuelto'}.get(ticket.status, ticket.status) }}
                         </span>
                     </dd>
                     <dt class="col-4 col-md-3 text-muted">Prioridad</dt>
@@ -34,14 +41,47 @@
                             {{ {'low': 'Baja', 'medium': 'Media', 'high': 'Alta'}.get(ticket.priority, ticket.priority) }}
                         </span>
                     </dd>
-                    <dt class="col-4 col-md-3 text-muted">Equipo</dt>
+                    <dt class="col-4 col-md-3 text-muted">Edificio</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.building or '—' }}</dd>
+                    <dt class="col-4 col-md-3 text-muted">Aula</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.classroom or '—' }}</dd>
+                    <dt class="col-4 col-md-3 text-muted">Tipo de equipo</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.equipment_type or '—' }}</dd>
+                    <dt class="col-4 col-md-3 text-muted">Equipo de soporte</dt>
                     <dd class="col-8 col-md-9">{{ ticket.team.name if ticket.team else '—' }}</dd>
                     <dt class="col-4 col-md-3 text-muted">Asignado</dt>
                     <dd class="col-8 col-md-9">{{ ticket.assignee.user.name if ticket.assignee else '—' }}
                     </dd>
+                    {% if ticket.resolved_at %}
+                    <dt class="col-4 col-md-3 text-muted">Fecha de cierre</dt>
+                    <dd class="col-8 col-md-9">{{ ticket.resolved_at|local_dt }}</dd>
+                    {% endif %}
                 </dl>
             </div>
         </div>
+
+        {% if current_user.role == 'requester' %}
+        {% set step_assigned = ticket.status in ('assigned', 'in_progress', 'on_hold', 'resolved') %}
+        {% set step_in_repair = ticket.status in ('in_progress', 'on_hold', 'resolved') %}
+        {% set step_done = ticket.status == 'resolved' %}
+        {% set step_evaluated = has_feedback %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6 mb-3">Seguimiento del reporte</h3>
+                {% if ticket.status == 'cancelled' %}
+                <span class="status-pill status-cancelled">Ticket cancelado</span>
+                {% else %}
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="status-pill status-open">1. Recibido</span>
+                    <span class="status-pill {{ 'status-open' if step_assigned else 'status-closed' }}">2. Asignado</span>
+                    <span class="status-pill {{ 'status-pending' if step_in_repair else 'status-closed' }}">3. En reparación</span>
+                    <span class="status-pill {{ 'status-solved' if step_done else 'status-closed' }}">4. Finalizado</span>
+                    <span class="status-pill {{ 'status-solved' if step_evaluated else 'status-closed' }}">5. Evaluar atención</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         {% if ticket.photo_url %}
         <div class="card mt-3">
@@ -67,7 +107,7 @@
 
         {% if current_user.role == 'agent' and not ticket.resolution_photo_url %}
         <div class="alert alert-info mt-3 py-2 small mb-0">
-            Todavía no subiste la foto de resolución. Subila desde la App Móvil (Fixu Campo) una vez que termines el arreglo en sitio.
+            Todavía no subiste la foto de resolución. Subila desde la App Móvil una vez que termines el arreglo en sitio.
         </div>
         {% endif %}
 
@@ -81,7 +121,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-2 small text-muted">
                         <strong class="me-2 text-body">{{ c.team_member.user.name }}</strong>
-                        <span>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        <span>{{ c.created_at|local_dt }}</span>
                         {% if c.private %}<span class="badge bg-secondary ms-2">Privado</span>{% endif %}
                     </div>
                     <div class="text-body">{{ c.body|e }}</div>
@@ -116,8 +156,8 @@
     </div>
 
     <div class="col-lg-4">
-        <!-- Botón de feedback - Solo visible para tickets cerrados y usuarios con rol 'requester' -->
-        {% if ticket.status == 'closed' and current_user.role == 'requester' %}
+        <!-- Botón de feedback - Solo visible para tickets resueltos y usuarios con rol 'requester' -->
+        {% if ticket.status == 'resolved' and current_user.role == 'requester' %}
         <div class="card mb-3">
             <div class="card-body text-center">
                 <h3 class="h6">¿Cómo calificarías la atención recibida?</h3>
@@ -149,7 +189,7 @@
                 <h3 class="h6">Historial</h3>
                 <ul class="list-unstyled small mb-0 text-muted">
                     {% for e in ticket.events %}
-                    <li>• {{ e.created_at.strftime('%Y-%m-%d %H:%M') }} — {{ e.body }}</li>
+                    <li>• {{ e.created_at|local_dt }} — {{ e.body }}</li>
                     {% else %}
                     <li class="text-muted">Sin eventos.</li>
                     {% endfor %}

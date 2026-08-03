@@ -30,11 +30,17 @@ export const logout = (token) => request('/logout', { method: 'POST', token });
 
 export const listTickets = (token) => request('/tickets', { token });
 
-export const createTicket = (token, { title, body, priority, photo_base64 }) =>
-  request('/tickets', { method: 'POST', token, body: { title, body, priority, photo_base64 } });
+export const createTicket = (token, { title, body, priority, building, classroom, equipment_type, photo_base64 }) =>
+  request('/tickets', { method: 'POST', token, body: { title, body, priority, building, classroom, equipment_type, photo_base64 } });
 
 export const uploadResolutionPhoto = (token, ticketId, photo_base64) =>
   request(`/tickets/${ticketId}/resolution-photo`, { method: 'POST', token, body: { photo_base64 } });
+
+export const cancelTicket = (token, ticketId) =>
+  request(`/tickets/${ticketId}/cancel`, { method: 'POST', token });
+
+export const updateTicketStatus = (token, ticketId, status) =>
+  request(`/tickets/${ticketId}/status`, { method: 'POST', token, body: { status } });
 
 export const submitFeedback = (token, ticketId, calificacion, comentario) =>
   request(`/tickets/${ticketId}/feedback`, { method: 'POST', token, body: { calificacion, comentario } });

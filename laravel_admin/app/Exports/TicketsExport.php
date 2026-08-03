@@ -27,11 +27,23 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping
             'Prioridad',
             'Solicitante',
             'Categoría',
+            'Edificio',
+            'Aula',
+            'Tipo de equipo',
             'Equipo',
             'Agente Asignado',
             'Fecha de Creación',
         ];
     }
+
+    private const STATUS_LABELS = [
+        'pending' => 'Pendiente',
+        'assigned' => 'Asignado',
+        'in_progress' => 'En proceso',
+        'on_hold' => 'En espera',
+        'cancelled' => 'Cancelado',
+        'resolved' => 'Resuelto',
+    ];
 
     public function map($ticket): array
     {
@@ -39,13 +51,16 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping
             $ticket->id,
             $this->sanitizeCell($ticket->title),
             $this->sanitizeCell($ticket->body),
-            ucfirst($ticket->status),
+            self::STATUS_LABELS[$ticket->status] ?? ucfirst($ticket->status),
             ucfirst($ticket->priority),
             $ticket->requester ? $this->sanitizeCell($ticket->requester->name) : 'N/A',
             $ticket->category ? $this->sanitizeCell($ticket->category->name) : 'N/A',
+            $ticket->building ?: 'N/A',
+            $ticket->classroom ?: 'N/A',
+            $ticket->equipment_type ?: 'N/A',
             $ticket->team ? $this->sanitizeCell($ticket->team->name) : 'N/A',
             ($ticket->assignee && $ticket->assignee->user) ? $this->sanitizeCell($ticket->assignee->user->name) : 'N/A',
-            $ticket->created_at->format('Y-m-d H:i:s'),
+            $ticket->created_at->copy()->setTimezone('America/Mexico_City')->format('Y-m-d H:i:s'),
         ];
     }
 

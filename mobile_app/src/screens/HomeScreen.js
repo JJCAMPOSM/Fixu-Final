@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { colors, typography, radius } from '../theme';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
-import FieldModeBadge from '../components/FieldModeBadge';
 
 function ActionCard({ icon, label, onPress }) {
   return (
@@ -24,7 +23,6 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <Screen>
-      <FieldModeBadge />
       <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Hola, {user?.name?.split(' ')[0] || ''} 👋</Text>
       <Text style={styles.subtitle}>
         {isAgent ? 'Tu resumen de campo del día' : '¿Qué necesitas hacer hoy?'}

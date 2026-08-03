@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Fixu Campo",
-    "slug": "fixu-campo",
+    "name": "Fixu Movil",
+    "slug": "fixu-movil",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
       "**/*"
     ],
     "android": {
-      "package": "com.fixu.campo",
+      "package": "com.fixu.movil",
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
@@ -20,7 +20,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.fixu.campo",
+      "bundleIdentifier": "com.fixu.movil",
       "infoPlist": {
         "NSCameraUsageDescription": "Fixu necesita la cámara para capturar evidencia en sitio de las fallas reportadas.",
         "NSLocationWhenInUseUsageDescription": "Fixu usa tu ubicación para confirmar que el reporte se generó en el sitio de la falla."

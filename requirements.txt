@@ -16,3 +16,4 @@ PyJWT==2.13.0
 redis==5.0.1
 Pillow==12.3.0
 prometheus-client==0.20.0
+tzdata==2025.2

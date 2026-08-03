@@ -2,21 +2,26 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional
 
+from ..ticket_catalog import BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES, STATUS_ADMIN_CHOICES
+
 
 class TicketForm(FlaskForm):
     title = StringField('Título', validators=[
-        DataRequired(message='El título es requerido'), 
+        DataRequired(message='El título es requerido'),
         Length(min=3, max=200, message='El título debe tener entre 3 y 200 caracteres')
     ])
     body = TextAreaField('Descripción', validators=[
-        DataRequired(message='La descripción es requerida'), 
+        DataRequired(message='La descripción es requerida'),
         Length(min=10, message='La descripción debe tener al menos 10 caracteres')
     ])
+    building = SelectField('Edificio', choices=[('', '— Selecciona un edificio —')] + [(b, b) for b in BUILDINGS], validators=[Optional()])
+    classroom = SelectField('Aula', choices=[('', '— Selecciona un aula —')] + [(c, c) for c in CLASSROOMS], validators=[Optional()])
+    equipment_type = SelectField('Tipo de equipo', choices=[('', '— Selecciona un tipo de equipo —')] + [(e, e) for e in EQUIPMENT_TYPES], validators=[Optional()])
     requester_id = SelectField('Solicitante', coerce=int, validators=[Optional()])
     category_id = SelectField('Categoría', coerce=int, validators=[Optional()])
-    team_id = SelectField('Equipo', coerce=int, validators=[Optional()])
+    team_id = SelectField('Equipo de soporte', coerce=int, validators=[Optional()])
     assignee_team_member_id = SelectField('Asignado a', coerce=int, validators=[Optional()])
-    status = SelectField('Estado', choices=[('open','Abierto'), ('pending','Pendiente'), ('solved','Resuelto'), ('closed','Cerrado')], validators=[Optional()])
+    status = SelectField('Estado', choices=STATUS_ADMIN_CHOICES, validators=[Optional()])
     priority = SelectField('Prioridad', choices=[('low','Baja'), ('medium','Media'), ('high','Alta')], validators=[Optional()])
     submit = SubmitField('Guardar')
 

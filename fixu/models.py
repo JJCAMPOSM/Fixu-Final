@@ -87,9 +87,13 @@ class Ticket(db.Model, TimestampMixin):
     team_id = db.Column(db.Integer, db.ForeignKey('teams.id'), nullable=True)
     assignee_team_member_id = db.Column(db.Integer, db.ForeignKey('team_members.id'), nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
-    status = db.Column(db.String(20), nullable=False, default='open')  # open|pending|solved|closed
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending|assigned|in_progress|on_hold|cancelled|resolved
+    resolved_at = db.Column(db.DateTime, nullable=True)  # fecha de cierre, se fija al pasar a 'resolved'
     priority = db.Column(db.String(20), nullable=False, default='medium')  # low|medium|high
     rating = db.Column(db.Integer, nullable=False, default=0)
+    building = db.Column(db.String(80), nullable=True)  # edificio donde está el equipo (reportado por el solicitante)
+    classroom = db.Column(db.String(80), nullable=True)  # aula/salón
+    equipment_type = db.Column(db.String(80), nullable=True)  # tipo de equipo (proyector, computadora, etc.)
     photo_path = db.Column(db.String(255), nullable=True)  # foto adjunta desde la App Móvil
     resolution_photo_path = db.Column(db.String(255), nullable=True)  # foto de resolución subida por agente/admin desde la web
     source = db.Column(db.String(20), nullable=False, default='web')  # web|mobile

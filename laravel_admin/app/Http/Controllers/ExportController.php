@@ -30,7 +30,7 @@ class ExportController extends Controller
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
 
         $tickets = Ticket::with(['requester', 'category', 'team', 'assignee.user'])
-            ->whereIn('status', ['closed', 'solved'])
+            ->where('status', 'resolved')
             ->whereBetween('updated_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->orderBy('updated_at', 'desc')
             ->get();

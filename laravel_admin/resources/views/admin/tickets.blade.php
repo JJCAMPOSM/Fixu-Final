@@ -29,22 +29,29 @@
                     <td style="font-weight: 500;">
                         {{ \Illuminate\Support\Str::limit($ticket->title, 40) }}
                         <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">
-                            {{ $ticket->created_at->format('Y-m-d H:i') }}
+                            {{ $ticket->created_at->copy()->setTimezone('America/Mexico_City')->format('Y-m-d H:i') }}
+                            @if($ticket->building || $ticket->classroom || $ticket->equipment_type)
+                                · {{ collect([$ticket->building, $ticket->classroom, $ticket->equipment_type])->filter()->implode(' · ') }}
+                            @endif
                         </div>
                     </td>
                     <td>
                         @php
                             $statusColors = [
-                                'open' => '#10b981', 
-                                'pending' => '#f59e0b', 
-                                'solved' => '#6366f1', 
-                                'closed' => '#64748b'
+                                'pending' => '#f59e0b',
+                                'assigned' => '#10b981',
+                                'in_progress' => '#6366f1',
+                                'on_hold' => '#f59e0b',
+                                'cancelled' => '#ef4444',
+                                'resolved' => '#10b981',
                             ];
                             $statusLabels = [
-                                'open' => 'Abierto', 
-                                'pending' => 'Pendiente', 
-                                'solved' => 'Resuelto', 
-                                'closed' => 'Cerrado'
+                                'pending' => 'Pendiente',
+                                'assigned' => 'Asignado',
+                                'in_progress' => 'En proceso',
+                                'on_hold' => 'En espera',
+                                'cancelled' => 'Cancelado',
+                                'resolved' => 'Resuelto',
                             ];
                         @endphp
                         <span style="background: {{ $statusColors[$ticket->status] ?? '#64748b' }}22; color: {{ $statusColors[$ticket->status] ?? '#64748b' }}; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500; text-transform: uppercase;">

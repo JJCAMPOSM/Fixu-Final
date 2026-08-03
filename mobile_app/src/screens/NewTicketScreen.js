@@ -6,8 +6,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { createTicket } from '../api';
 import { colors, radius, PRIORITY_STYLE } from '../theme';
-import FieldModeBadge from '../components/FieldModeBadge';
+import { BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES } from '../constants';
 import Button from '../components/Button';
+import SelectField from '../components/SelectField';
 import { useAuth } from '../context/AuthContext';
 
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -17,6 +18,9 @@ export default function NewTicketScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [priority, setPriority] = useState('medium');
+  const [building, setBuilding] = useState(null);
+  const [classroom, setClassroom] = useState(null);
+  const [equipmentType, setEquipmentType] = useState(null);
   const [photo, setPhoto] = useState(null); // { base64, uri }
   const [location, setLocation] = useState(null); // solo informativo, no se envía al servidor
   const [locationError, setLocationError] = useState('');
@@ -27,6 +31,9 @@ export default function NewTicketScreen({ navigation }) {
     if (title.trim().length < 3) return 'El título debe tener al menos 3 caracteres.';
     if (title.length > 200) return 'El título es demasiado largo (máx. 200).';
     if (body.trim().length < 10) return 'Describe la falla con al menos 10 caracteres.';
+    if (!building) return 'Selecciona el edificio.';
+    if (!classroom) return 'Selecciona el aula.';
+    if (!equipmentType) return 'Selecciona el tipo de equipo.';
     return null;
   };
 
@@ -73,6 +80,9 @@ export default function NewTicketScreen({ navigation }) {
         title: title.trim(),
         body: body.trim(),
         priority,
+        building,
+        classroom,
+        equipment_type: equipmentType,
         photo_base64: photo?.base64,
       });
       navigation.goBack();
@@ -85,8 +95,6 @@ export default function NewTicketScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
-      <FieldModeBadge />
-
       <Text style={styles.label}>Título</Text>
       <TextInput
         style={styles.input}
@@ -104,6 +112,31 @@ export default function NewTicketScreen({ navigation }) {
         placeholder="Describe lo que observaste..."
         placeholderTextColor={colors.textMuted}
         multiline
+      />
+
+      <SelectField
+        label="Edificio"
+        required
+        placeholder="Selecciona el edificio"
+        options={BUILDINGS}
+        value={building}
+        onChange={setBuilding}
+      />
+      <SelectField
+        label="Aula"
+        required
+        placeholder="Selecciona el aula"
+        options={CLASSROOMS}
+        value={classroom}
+        onChange={setClassroom}
+      />
+      <SelectField
+        label="Tipo de equipo"
+        required
+        placeholder="Selecciona el tipo de equipo"
+        options={EQUIPMENT_TYPES}
+        value={equipmentType}
+        onChange={setEquipmentType}
       />
 
       <Text style={styles.label}>Prioridad</Text>

@@ -3,7 +3,7 @@
 <div class="d-flex align-items-center mb-4">
     <h1 class="h3 mb-0">Tickets</h1>
     <div class="ms-auto">
-        {% if current_user.role in ['admin','agent','requester'] %}
+        {% if current_user.role == 'requester' %}
         <a class="btn btn-primary btn-lg shadow-sm" href="{{ url_for('tickets.create') }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                 class="bi bi-plus-circle me-2" viewBox="0 0 16 16">
@@ -23,8 +23,8 @@
         <label class="form-label">Estado</label>
         <select name="status" class="form-select">
             <option value="">Todos</option>
-            {% for val, lbl in [('open','Abierto'), ('pending','Pendiente'), ('solved','Resuelto'),
-            ('closed','Cerrado')] %}
+            {% for val, lbl in [('pending','Pendiente'), ('assigned','Asignado'), ('in_progress','En proceso'),
+            ('on_hold','En espera'), ('cancelled','Cancelado'), ('resolved','Resuelto')] %}
             <option value="{{ val }}" {% if request.args.get('status')==val %}selected{% endif %}>{{ lbl }}</option>
             {% endfor %}
         </select>
@@ -39,7 +39,7 @@
         </select>
     </div>
     <div class="col-6 col-md-3">
-        <label class="form-label">Equipo</label>
+        <label class="form-label">Equipo de soporte</label>
         <select name="team_id" id="filter-team" class="form-select">
             <option value="">Todos</option>
             {% for t in teams %}
@@ -94,11 +94,11 @@
                                 <span class="badge bg-success-subtle text-success ms-1" style="font-size: 0.65rem;" title="Tiene foto de resolución">resuelto c/foto</span>
                                 {% endif %}
                             </div>
-                            <div class="small text-muted" style="margin-top: 2px;">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            <div class="small text-muted" style="margin-top: 2px;">{{ t.created_at|local_dt }}</div>
                         </td>
                         <td>
                             <span class="status-pill status-{{ t.status }}">
-                                {{ {'open': 'Abierto', 'pending': 'Pendiente', 'solved': 'Resuelto', 'closed': 'Cerrado'}.get(t.status, t.status) }}
+                                {{ {'pending': 'Pendiente', 'assigned': 'Asignado', 'in_progress': 'En proceso', 'on_hold': 'En espera', 'cancelled': 'Cancelado', 'resolved': 'Resuelto'}.get(t.status, t.status) }}
                             </span>
                         </td>
                         <td>

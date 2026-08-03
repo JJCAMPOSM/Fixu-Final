@@ -3,7 +3,6 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { listTickets } from '../api';
 import { colors, typography, radius, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
-import FieldModeBadge from '../components/FieldModeBadge';
 import Badge from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,12 +30,11 @@ export default function TicketsScreen({ navigation }) {
     setRefreshing(false);
   };
 
-  const activeCount = tickets.filter((t) => t.status !== 'closed').length;
+  const activeCount = tickets.filter((t) => !['resolved', 'cancelled'].includes(t.status)).length;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <FieldModeBadge />
         <View style={styles.headerRow}>
           <View>
             <Text style={[typography.pageTitle, { fontSize: 20 }]}>Hola, {user?.name?.split(' ')[0] || 'Agente'} 👋</Text>
@@ -67,7 +65,7 @@ export default function TicketsScreen({ navigation }) {
           </Text>
         }
         renderItem={({ item }) => {
-          const status = STATUS_STYLE[item.status] || STATUS_STYLE.open;
+          const status = STATUS_STYLE[item.status] || STATUS_STYLE.pending;
           const priority = PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.medium;
           return (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TicketDetail', { ticket: item })} activeOpacity={0.8}>
@@ -80,6 +78,11 @@ export default function TicketsScreen({ navigation }) {
               )}
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                {(item.building || item.classroom) && (
+                  <Text style={styles.cardSubtitle} numberOfLines={1}>
+                    {[item.building, item.classroom].filter(Boolean).join(' · ')}
+                  </Text>
+                )}
                 <View style={styles.badgeRow}>
                   <Badge label={status.label} bg={status.bg} fg={status.fg} />
                   <Badge label={priority.label} bg={priority.bg} fg={priority.fg} />
@@ -116,6 +119,7 @@ const styles = StyleSheet.create({
   thumb: { width: 52, height: 52, borderRadius: 10, marginRight: 12, backgroundColor: colors.pageBg },
   thumbPlaceholder: { justifyContent: 'center', alignItems: 'center' },
   cardTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
+  cardSubtitle: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
   fab: {
     position: 'absolute', bottom: 24, right: 24, backgroundColor: colors.accent,

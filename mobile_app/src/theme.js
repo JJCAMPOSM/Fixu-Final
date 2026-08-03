@@ -45,10 +45,12 @@ export const radius = { sm: 8, md: 12, lg: 20, pill: 999 };
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 
 export const STATUS_STYLE = {
-  open: { label: 'Abierto', bg: colors.infoBg, fg: colors.info },
   pending: { label: 'Pendiente', bg: colors.warningBg, fg: colors.warning },
-  solved: { label: 'Resuelto', bg: colors.successBg, fg: colors.success },
-  closed: { label: 'Cerrado', bg: colors.border, fg: colors.textSecondary },
+  assigned: { label: 'Asignado', bg: colors.infoBg, fg: colors.info },
+  in_progress: { label: 'En proceso', bg: colors.accentBg, fg: colors.accent },
+  on_hold: { label: 'En espera', bg: colors.warningBg, fg: colors.warning },
+  cancelled: { label: 'Cancelado', bg: colors.dangerBg, fg: colors.danger },
+  resolved: { label: 'Resuelto', bg: colors.successBg, fg: colors.success },
   done: { label: 'Completado', bg: colors.successBg, fg: colors.success },
 };
 

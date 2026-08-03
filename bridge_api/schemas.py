@@ -11,10 +11,12 @@ class UserRole(str, Enum):
 
 
 class TicketStatus(str, Enum):
-    OPEN = "open"
     PENDING = "pending"
-    SOLVED = "solved"
-    CLOSED = "closed"
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    ON_HOLD = "on_hold"
+    CANCELLED = "cancelled"
+    RESOLVED = "resolved"
 
 
 class TicketPriority(str, Enum):
@@ -55,7 +57,7 @@ class UserResponse(UserBase):
 class TicketBase(BaseModel):
     title: str = Field(..., max_length=200)
     body: str
-    status: TicketStatus = TicketStatus.OPEN
+    status: TicketStatus = TicketStatus.PENDING
     priority: TicketPriority = TicketPriority.MEDIUM
 
 

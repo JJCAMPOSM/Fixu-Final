@@ -13,8 +13,7 @@
         th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
         th { background-color: #f9fafb; color: #374151; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
         tr:nth-child(even) { background-color: #f9fafb; }
-        .status-solved { color: #059669; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        .status-closed { color: #4b5563; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .status-resolved { color: #059669; font-weight: bold; font-size: 11px; text-transform: uppercase; }
         .footer { position: fixed; bottom: -30px; left: 0px; right: 0px; height: 30px; text-align: right; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 5px; }
         .page-number:after { content: counter(page); }
     </style>
@@ -53,10 +52,8 @@
                 <td>{{ $ticket->category ? $ticket->category->name : 'No Asignada' }}</td>
                 <td>{{ $ticket->requester->name ?? 'N/A' }}</td>
                 <td>{{ $ticket->assignee && $ticket->assignee->user ? $ticket->assignee->user->name : 'N/A' }}</td>
-                <td class="{{ $ticket->status == 'solved' ? 'status-solved' : 'status-closed' }}">
-                    {{ $ticket->status == 'solved' ? 'Resuelto' : 'Cerrado' }}
-                </td>
-                <td>{{ \Carbon\Carbon::parse($ticket->updated_at)->format('d/m/Y H:i') }}</td>
+                <td class="status-resolved">Resuelto</td>
+                <td>{{ \Carbon\Carbon::parse($ticket->resolved_at ?? $ticket->updated_at)->format('d/m/Y H:i') }}</td>
             </tr>
             @empty
             <tr>

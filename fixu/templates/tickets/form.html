@@ -9,10 +9,13 @@
         <form method="post" novalidate>
             {{ form.hidden_tag() }}
 
+            {% set agent_edit = mode == 'edit' and current_user.role == 'agent' %}
+
             <div class="mb-3">
                 <label class="form-label required-field">{{ form.title.label }}</label>
-                {{ form.title(class='form-control', required=True, minlength=3, maxlength=200) }}
+                {{ form.title(class='form-control', required=True, minlength=3, maxlength=200, readonly=agent_edit) }}
                 {% for e in form.title.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                {% if agent_edit %}<div class="form-text">Solo el administrador puede editar el título.</div>{% endif %}
             </div>
 
             <div class="mb-3">
@@ -20,12 +23,31 @@
                 {% if current_user.role == 'requester' %}
                 {{ form.body(class='form-control', required=True, minlength=10, rows=5, placeholder='Describe el problema detalladamente. Por favor especifica el aula donde se presentó el problema.') }}
                 {% else %}
-                {{ form.body(class='form-control', required=True, minlength=10, rows=5) }}
+                {{ form.body(class='form-control', required=True, minlength=10, rows=5, readonly=agent_edit) }}
                 {% endif %}
                 {% for e in form.body.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                {% if agent_edit %}<div class="form-text">Solo el administrador puede editar la descripción.</div>{% endif %}
             </div>
 
-            {% if current_user.role in ['admin', 'agent'] %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.building.label }}</label>
+                    {{ form.building(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {% for e in form.building.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.classroom.label }}</label>
+                    {{ form.classroom(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {% for e in form.classroom.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label{{ ' required-field' if current_user.role == 'requester' }}">{{ form.equipment_type.label }}</label>
+                    {{ form.equipment_type(class='form-select', required=(current_user.role == 'requester'), disabled=agent_edit) }}
+                    {% for e in form.equipment_type.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+
+            {% if mode == 'edit' and current_user.role == 'admin' %}
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">{{ form.requester_id.label }}</label>
@@ -58,11 +80,19 @@
                     {% for e in form.status.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
             </div>
+            {% elif mode == 'edit' and current_user.role == 'agent' %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.status.label }}</label>
+                    {{ form.status(class='form-select') }}
+                    {% for e in form.status.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
             {% endif %}
 
             <div class="mb-3">
                 <label class="form-label">{{ form.priority.label }}</label>
-                {{ form.priority(class='form-select') }}
+                {{ form.priority(class='form-select', disabled=agent_edit) }}
                 {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
             </div>
 
@@ -74,7 +104,7 @@
     </div>
 </div>
 
-{% if current_user.role in ['admin', 'agent'] %}
+{% if mode == 'edit' and current_user.role == 'admin' %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const teamSelect = document.getElementById('team-select');

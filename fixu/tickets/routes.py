@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
@@ -7,10 +9,27 @@ from .forms import TicketForm, CommentForm
 from ..extensions import db
 from ..models import Ticket, Requester, Team, TeamMember, Comment, TicketEvent, Category, SatisfactionTicket, User
 from ..services.bridge_client import get_bridge_client
+from ..ticket_catalog import (
+    BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES,
+    STATUS_ADMIN_CHOICES, STATUS_AGENT_CHOICES, CANCELABLE_BY_REQUESTER,
+)
 
 
 def is_admin_or_agent():
     return current_user.is_authenticated and current_user.role in ('admin', 'agent')
+
+
+def is_agent():
+    return current_user.is_authenticated and current_user.role == 'agent'
+
+
+def current_team_member():
+    return TeamMember.query.filter_by(user_id=current_user.id).first()
+
+
+def _mark_resolved_if_needed(ticket, new_status):
+    if new_status == 'resolved' and ticket.status != 'resolved':
+        ticket.resolved_at = datetime.utcnow()
 
 
 @bp.route('/')
@@ -42,11 +61,19 @@ def index():
             query = query.filter(Ticket.requester_id == requester.id)
         else:
             query = query.filter(False)
+    elif current_user.role == 'agent':
+        # El agente solo ve los tickets que tiene asignados (mismo criterio
+        # que la App Móvil), no todo el sistema.
+        tm = current_team_member()
+        if tm:
+            query = query.filter(Ticket.assignee_team_member_id == tm.id)
+        else:
+            query = query.filter(False)
 
     page = request.args.get('page', 1, type=int)
     pagination = query.paginate(page=page, per_page=10, error_out=False)
 
-    teams = Team.query.order_by(Team.name).all() if is_admin_or_agent() else []
+    teams = Team.query.order_by(Team.name).all() if current_user.role == 'admin' else []
 
     return render_template('tickets/index.html', pagination=pagination, tickets=pagination.items, teams=teams)
 
@@ -54,87 +81,53 @@ def index():
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
 def create():
-    form = TicketForm()
-
-    # Solo admins y agentes necesitan ver las opciones de solicitantes y equipos
-    if is_admin_or_agent():
-        requesters = Requester.query.order_by(Requester.name).all()
-        form.requester_id.choices = [(r.id, f"{r.name} <{r.email}>") for r in requesters]
-
-        categories = Category.query.order_by(Category.name).all()
-        form.category_id.choices = [(0, '— Ninguna —')] + [(c.id, c.name) for c in categories]
-
-        teams = Team.query.order_by(Team.name).all()
-        form.team_id.choices = [(0, '— Ninguno —')] + [(t.id, t.name) for t in teams]
-        
-        # Show all team members from all teams
-        all_members = TeamMember.query.join(User).order_by(User.name).all()
-        form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
-            (m.id, f"{m.user.name} ({m.team.name})") for m in all_members
-        ]
-    else:
-        # Para solicitantes, establecer valores dummy (no se usarán)
-        form.requester_id.choices = [(0, '')]
-        form.category_id.choices = [(0, '')]
-        form.team_id.choices = [(0, '')]
-        form.assignee_team_member_id.choices = [(0, '')]
-
-    if not is_admin_or_agent() and current_user.role != 'requester':
-        flash('No autorizado.', 'danger')
+    """Registrar una incidencia: solo el solicitante puede crear tickets."""
+    if current_user.role != 'requester':
+        flash('Solo un solicitante puede crear tickets.', 'danger')
         return redirect(url_for('tickets.index'))
 
+    form = TicketForm()
+    form.requester_id.choices = [(0, '')]
+    form.category_id.choices = [(0, '')]
+    form.team_id.choices = [(0, '')]
+    form.assignee_team_member_id.choices = [(0, '')]
+    form.status.choices = [('pending', 'Pendiente')]
+
     if form.validate_on_submit():
-        # Si es solicitante, forzar valores específicos
-        if current_user.role == 'requester':
-            req = Requester.query.filter_by(email=current_user.email).first()
-            if not req:
-                flash('Error: No se encontró perfil de solicitante.', 'danger')
-                return redirect(url_for('tickets.index'))
+        req = Requester.query.filter_by(email=current_user.email).first()
+        if not req:
+            flash('Error: No se encontró perfil de solicitante.', 'danger')
+            return redirect(url_for('tickets.index'))
 
-            ticket = Ticket(
-                title=form.title.data.strip(),
-                body=form.body.data.strip(),
-                requester_id=req.id,
-                category_id=None,
-                team_id=None,
-                assignee_team_member_id=None,
-                status='open',
-                priority=form.priority.data
-            )
-        else:
-            # Para admins y agentes, validar campos requeridos
-            if not form.requester_id.data or form.requester_id.data == 0:
-                flash('Debe seleccionar un solicitante.', 'danger')
-                return render_template('tickets/form.html', form=form, mode='create')
+        if form.building.data not in BUILDINGS:
+            flash('Debe seleccionar un edificio.', 'danger')
+            return render_template('tickets/form.html', form=form, mode='create')
+        if form.classroom.data not in CLASSROOMS:
+            flash('Debe seleccionar un aula.', 'danger')
+            return render_template('tickets/form.html', form=form, mode='create')
+        if form.equipment_type.data not in EQUIPMENT_TYPES:
+            flash('Debe seleccionar un tipo de equipo.', 'danger')
+            return render_template('tickets/form.html', form=form, mode='create')
 
-            if not form.status.data:
-                flash('Debe seleccionar un estado.', 'danger')
-                return render_template('tickets/form.html', form=form, mode='create')
-
-            if not form.priority.data:
-                flash('Debe seleccionar una prioridad.', 'danger')
-                return render_template('tickets/form.html', form=form, mode='create')
-
-            # Usar los valores del formulario
-            assignee_value = form.assignee_team_member_id.data or 0
-            team_value = form.team_id.data or 0
-            category_value = form.category_id.data or 0
-            ticket = Ticket(
-                title=form.title.data.strip(),
-                body=form.body.data.strip(),
-                requester_id=form.requester_id.data,
-                category_id=category_value if category_value != 0 else None,
-                team_id=team_value if team_value != 0 else None,
-                assignee_team_member_id=assignee_value if assignee_value != 0 else None,
-                status=form.status.data,
-                priority=form.priority.data
-            )
+        ticket = Ticket(
+            title=form.title.data.strip(),
+            body=form.body.data.strip(),
+            requester_id=req.id,
+            category_id=None,
+            team_id=None,
+            assignee_team_member_id=None,
+            status='pending',
+            priority=form.priority.data,
+            building=form.building.data,
+            classroom=form.classroom.data,
+            equipment_type=form.equipment_type.data,
+        )
 
         db.session.add(ticket)
         db.session.flush()
         db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket creado'))
         db.session.commit()
-        
+
         # Sincronizar con Laravel a través del Bridge API
         try:
             bridge = get_bridge_client()
@@ -155,7 +148,7 @@ def create():
                 current_app.logger.warning(f"Sync ticket to bridge failed: {result}")
         except Exception as e:
             current_app.logger.error(f"Error syncing ticket to bridge: {e}")
-        
+
         flash('Ticket creado con éxito.', 'success')
         return redirect(url_for('tickets.show', ticket_id=ticket.id))
 
@@ -178,11 +171,18 @@ def show(ticket_id):
         if not req or ticket.requester_id != req.id:
             flash('No autorizado.', 'danger')
             return redirect(url_for('tickets.index'))
+    elif current_user.role == 'agent':
+        tm = current_team_member()
+        if not tm or ticket.assignee_team_member_id != tm.id:
+            flash('No autorizado.', 'danger')
+            return redirect(url_for('tickets.index'))
 
     comment_form = CommentForm()
     has_feedback = SatisfactionTicket.query.filter_by(ticket_id=ticket_id).first() is not None
+    can_cancel = current_user.role == 'requester' and ticket.status in CANCELABLE_BY_REQUESTER
     return render_template(
-        'tickets/show.html', ticket=ticket, comment_form=comment_form, has_feedback=has_feedback
+        'tickets/show.html', ticket=ticket, comment_form=comment_form, has_feedback=has_feedback,
+        can_cancel=can_cancel,
     )
 
 
@@ -198,6 +198,9 @@ def add_comment(ticket_id):
         tm = TeamMember.query.filter_by(user_id=current_user.id).first()
         if not tm:
             flash('No estás asignado a un equipo.', 'danger')
+            return redirect(url_for('tickets.show', ticket_id=ticket.id))
+        if is_agent() and ticket.assignee_team_member_id != tm.id:
+            flash('Solo podés comentar en tickets que tenés asignados.', 'danger')
             return redirect(url_for('tickets.show', ticket_id=ticket.id))
         comment = Comment(ticket_id=ticket.id, team_member_id=tm.id, private=bool(form.private.data), body=form.body.data.strip())
         db.session.add(comment)
@@ -218,58 +221,93 @@ def edit(ticket_id):
         flash('No autorizado.', 'danger')
         return redirect(url_for('tickets.show', ticket_id=ticket.id))
 
+    tm = current_team_member() if is_agent() else None
+    if is_agent() and (not tm or ticket.assignee_team_member_id != tm.id):
+        flash('Solo podés editar tickets que tenés asignados.', 'danger')
+        return redirect(url_for('tickets.show', ticket_id=ticket.id))
+
     form = TicketForm(obj=ticket)
 
-    requesters = Requester.query.order_by(Requester.name).all()
-    form.requester_id.choices = [(r.id, f"{r.name} <{r.email}>") for r in requesters]
-
-    categories = Category.query.order_by(Category.name).all()
-    form.category_id.choices = [(0, '— Ninguna —')] + [(c.id, c.name) for c in categories]
-
-    teams = Team.query.order_by(Team.name).all()
-    form.team_id.choices = [(0, '— Ninguno —')] + [(t.id, t.name) for t in teams]
-
-    # Populate assignee dropdown
-    members = []
-    if ticket.team_id:
-        # If ticket has a team, show only members from that team
-        members = TeamMember.query.filter_by(team_id=ticket.team_id).all()
+    if is_agent():
+        # El agente solo puede cambiar el estado (y agregar observaciones vía
+        # comentarios): no reasigna, no cambia el equipo/solicitante ni elimina.
+        form.status.choices = STATUS_AGENT_CHOICES
     else:
-        # If no team assigned, show ALL team members from ALL teams
-        members = TeamMember.query.join(User).order_by(User.name).all()
-    
-    form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
-        (m.id, f"{m.user.name} ({m.team.name})") for m in members
-    ]
+        form.status.choices = STATUS_ADMIN_CHOICES
 
-    # Pre-validación: sincronizar opciones de assignee con el team_id seleccionado en el POST
-    if request.method == 'POST' and form.team_id.data:
-        team_id_from_form = form.team_id.data
-        if team_id_from_form and team_id_from_form != 0:
-            # Recargar los miembros del equipo seleccionado en el formulario
-            members_from_selected_team = TeamMember.query.filter_by(team_id=team_id_from_form).all()
-            form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
-                (m.id, f"{m.user.name} ({m.team.name})") for m in members_from_selected_team
-            ]
+        requesters = Requester.query.order_by(Requester.name).all()
+        form.requester_id.choices = [(r.id, f"{r.name} <{r.email}>") for r in requesters]
+
+        categories = Category.query.order_by(Category.name).all()
+        form.category_id.choices = [(0, '— Ninguna —')] + [(c.id, c.name) for c in categories]
+
+        teams = Team.query.order_by(Team.name).all()
+        form.team_id.choices = [(0, '— Ninguno —')] + [(t.id, t.name) for t in teams]
+
+        # Populate assignee dropdown
+        if ticket.team_id:
+            # If ticket has a team, show only members from that team
+            members = TeamMember.query.filter_by(team_id=ticket.team_id).all()
         else:
-            # Si no hay equipo seleccionado, mostrar TODOS los miembros de TODOS los equipos
-            all_members = TeamMember.query.join(User).order_by(User.name).all()
-            form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
-                (m.id, f"{m.user.name} ({m.team.name})") for m in all_members
-            ]
+            # If no team assigned, show ALL team members from ALL teams
+            members = TeamMember.query.join(User).order_by(User.name).all()
+
+        form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
+            (m.id, f"{m.user.name} ({m.team.name})") for m in members
+        ]
+
+        # Pre-validación: sincronizar opciones de assignee con el team_id seleccionado en el POST
+        if request.method == 'POST' and form.team_id.data:
+            team_id_from_form = form.team_id.data
+            if team_id_from_form and team_id_from_form != 0:
+                # Recargar los miembros del equipo seleccionado en el formulario
+                members_from_selected_team = TeamMember.query.filter_by(team_id=team_id_from_form).all()
+                form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
+                    (m.id, f"{m.user.name} ({m.team.name})") for m in members_from_selected_team
+                ]
+            else:
+                # Si no hay equipo seleccionado, mostrar TODOS los miembros de TODOS los equipos
+                all_members = TeamMember.query.join(User).order_by(User.name).all()
+                form.assignee_team_member_id.choices = [(0, '— Ninguno —')] + [
+                    (m.id, f"{m.user.name} ({m.team.name})") for m in all_members
+                ]
 
     if form.validate_on_submit():
+        new_status = form.status.data
+
+        if is_agent():
+            # Un agente comprometido no puede tocar nada más que el estado.
+            _mark_resolved_if_needed(ticket, new_status)
+            ticket.status = new_status
+            db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
+            db.session.commit()
+            flash('Ticket actualizado.', 'success')
+            return redirect(url_for('tickets.show', ticket_id=ticket.id))
+
         assignee_value = form.assignee_team_member_id.data or 0
         team_value = form.team_id.data or 0
         category_value = form.category_id.data or 0
+        new_assignee = assignee_value if assignee_value != 0 else None
+
+        # Al asignar un agente a un ticket que seguía "pendiente", el estado
+        # avanza automáticamente a "asignado" (salvo que el admin ya lo haya
+        # movido explícitamente a un estado más avanzado).
+        if new_assignee is not None and new_status == 'pending':
+            new_status = 'assigned'
+
+        _mark_resolved_if_needed(ticket, new_status)
+
         ticket.title = form.title.data.strip()
         ticket.body = form.body.data.strip()
         ticket.requester_id = form.requester_id.data
         ticket.category_id = category_value if category_value != 0 else None
         ticket.team_id = team_value if team_value != 0 else None
-        ticket.assignee_team_member_id = assignee_value if assignee_value != 0 else None
-        ticket.status = form.status.data
+        ticket.assignee_team_member_id = new_assignee
+        ticket.status = new_status
         ticket.priority = form.priority.data
+        ticket.building = form.building.data or None
+        ticket.classroom = form.classroom.data or None
+        ticket.equipment_type = form.equipment_type.data or None
         db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
         db.session.commit()
         flash('Ticket actualizado.', 'success')
@@ -278,11 +316,38 @@ def edit(ticket_id):
     return render_template('tickets/form.html', form=form, mode='edit', ticket=ticket)
 
 
+@bp.route('/<int:ticket_id>/cancel', methods=['POST'])
+@login_required
+def cancel(ticket_id):
+    """El solicitante cancela su propio ticket, solo si aún no ha sido atendido."""
+    ticket = Ticket.query.get_or_404(ticket_id)
+
+    if current_user.role != 'requester':
+        flash('No autorizado.', 'danger')
+        return redirect(url_for('tickets.show', ticket_id=ticket.id))
+
+    req = Requester.query.filter_by(email=current_user.email).first()
+    if not req or ticket.requester_id != req.id:
+        flash('No autorizado.', 'danger')
+        return redirect(url_for('tickets.index'))
+
+    if ticket.status not in CANCELABLE_BY_REQUESTER:
+        flash('Este ticket ya está siendo atendido y no se puede cancelar.', 'danger')
+        return redirect(url_for('tickets.show', ticket_id=ticket.id))
+
+    ticket.status = 'cancelled'
+    db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket cancelado por el solicitante'))
+    db.session.commit()
+    flash('Ticket cancelado.', 'success')
+    return redirect(url_for('tickets.show', ticket_id=ticket.id))
+
+
 @bp.route('/<int:ticket_id>/delete', methods=['POST'])
 @login_required
 def delete(ticket_id):
+    """Solo el administrador puede eliminar tickets."""
     ticket = Ticket.query.get_or_404(ticket_id)
-    if not is_admin_or_agent():
+    if current_user.role != 'admin':
         flash('No autorizado.', 'danger')
         return redirect(url_for('tickets.show', ticket_id=ticket.id))
     db.session.delete(ticket)

@@ -21,6 +21,46 @@
                 <textarea name="body" rows="5" required>{{ old('body', $ticket->body) }}</textarea>
             </div>
 
+            @php
+                $buildings = ['Edificio A', 'Edificio B', 'Edificio C', 'Edificio D', 'Biblioteca'];
+                $classrooms = ['Aula 101', 'Aula 102', 'Aula 203', 'Aula 204', 'Laboratorio 1'];
+                $equipmentTypes = ['Proyector', 'Computadora', 'Impresora', 'Aire acondicionado', 'Pizarrón electrónico'];
+            @endphp
+            <div class="grid-2 mt-4" style="gap: 1.5rem;">
+                <!-- Edificio -->
+                <div class="form-group">
+                    <label>Edificio</label>
+                    <select name="building">
+                        <option value="">-- Ninguno --</option>
+                        @foreach($buildings as $b)
+                            <option value="{{ $b }}" {{ (old('building', $ticket->building) == $b) ? 'selected' : '' }}>{{ $b }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Aula -->
+                <div class="form-group">
+                    <label>Aula</label>
+                    <select name="classroom">
+                        <option value="">-- Ninguna --</option>
+                        @foreach($classrooms as $c)
+                            <option value="{{ $c }}" {{ (old('classroom', $ticket->classroom) == $c) ? 'selected' : '' }}>{{ $c }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Tipo de equipo -->
+                <div class="form-group">
+                    <label>Tipo de equipo</label>
+                    <select name="equipment_type">
+                        <option value="">-- Ninguno --</option>
+                        @foreach($equipmentTypes as $e)
+                            <option value="{{ $e }}" {{ (old('equipment_type', $ticket->equipment_type) == $e) ? 'selected' : '' }}>{{ $e }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
             <div class="grid-2 mt-4" style="gap: 1.5rem;">
                 <!-- Solicitante -->
                 <div class="form-group">
@@ -73,10 +113,12 @@
                 <div class="form-group">
                     <label>Estado</label>
                     <select name="status" required>
-                        <option value="open" {{ (old('status', $ticket->status) == 'open') ? 'selected' : '' }}>Abierto</option>
                         <option value="pending" {{ (old('status', $ticket->status) == 'pending') ? 'selected' : '' }}>Pendiente</option>
-                        <option value="solved" {{ (old('status', $ticket->status) == 'solved') ? 'selected' : '' }}>Resuelto</option>
-                        <option value="closed" {{ (old('status', $ticket->status) == 'closed') ? 'selected' : '' }}>Cerrado</option>
+                        <option value="assigned" {{ (old('status', $ticket->status) == 'assigned') ? 'selected' : '' }}>Asignado</option>
+                        <option value="in_progress" {{ (old('status', $ticket->status) == 'in_progress') ? 'selected' : '' }}>En proceso</option>
+                        <option value="on_hold" {{ (old('status', $ticket->status) == 'on_hold') ? 'selected' : '' }}>En espera</option>
+                        <option value="cancelled" {{ (old('status', $ticket->status) == 'cancelled') ? 'selected' : '' }}>Cancelado</option>
+                        <option value="resolved" {{ (old('status', $ticket->status) == 'resolved') ? 'selected' : '' }}>Resuelto</option>
                     </select>
                 </div>
 
