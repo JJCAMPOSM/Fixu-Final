@@ -447,8 +447,8 @@ def mobile_login():
 
     clear_failed_login(email)
 
-    if user.role != 'requester':
-        return jsonify({'error': 'Esta app es solo para solicitantes. Usa la versión web para administrar o dar soporte.'}), 403
+    if user.role not in ('requester', 'agent'):
+        return jsonify({'error': 'Esta app es solo para solicitantes y agentes de campo. Usa la versión web para administrar.'}), 403
 
     token = _issue_jwt(user)
     return jsonify({
@@ -528,7 +528,10 @@ def ticket_photo(filename):
     if not _PHOTO_FILENAME_RE.match(filename):
         return jsonify({'error': 'No encontrado'}), 404
 
-    ticket = Ticket.query.filter_by(photo_path=f'uploads/tickets/{filename}').first()
+    rel_path = f'uploads/tickets/{filename}'
+    ticket = Ticket.query.filter(
+        (Ticket.photo_path == rel_path) | (Ticket.resolution_photo_path == rel_path)
+    ).first()
     if not ticket:
         return jsonify({'error': 'No encontrado'}), 404
 
@@ -552,33 +555,21 @@ def ticket_photo(filename):
     return send_from_directory(upload_dir, filename)
 
 
-def _save_ticket_photo(photo_b64: str) -> str:
-    """Decodifica y guarda una foto en base64 (data URL o crudo). Devuelve la ruta relativa guardada."""
-    if ',' in photo_b64 and photo_b64.strip().startswith('data:'):
-        header, photo_b64 = photo_b64.split(',', 1)
-        ext = 'jpg'
-        if 'png' in header:
-            ext = 'png'
-        elif 'webp' in header:
-            ext = 'webp'
-    else:
-        ext = 'jpg'
+def _store_validated_photo_bytes(raw: bytes, ext: str) -> str:
+    """Valida que `raw` sea realmente una imagen del tipo declarado por `ext`
+    y la guarda con un nombre aleatorio. Devuelve la ruta relativa guardada.
 
+    Compartida entre la subida desde la App Móvil (base64) y la subida de
+    foto de resolución desde la web (multipart/form-data): ambas rutas deben
+    pasar por la misma verificación de contenido real (no basta con confiar
+    en la extensión o el content-type declarado por el cliente).
+    """
     if ext not in ALLOWED_PHOTO_EXTENSIONS:
         raise ValueError('Formato de imagen no permitido')
-
-    try:
-        raw = base64.b64decode(photo_b64, validate=True)
-    except Exception:
-        raise ValueError('La foto no es un base64 válido')
 
     if len(raw) > MAX_PHOTO_BYTES:
         raise ValueError('La foto supera el tamaño máximo permitido (6 MB)')
 
-    # Validar que el contenido decodificado es realmente una imagen del tipo
-    # declarado (no basta con el prefijo "data:image/..." que envía el
-    # cliente: cualquiera puede declarar ese prefijo y subir un archivo
-    # arbitrario que luego se sirve públicamente desde /static/uploads/).
     expected_format = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG', 'webp': 'WEBP'}[ext]
     try:
         with Image.open(io.BytesIO(raw)) as img:
@@ -601,6 +592,26 @@ def _save_ticket_photo(photo_b64: str) -> str:
     return f"uploads/tickets/{filename}"
 
 
+def _save_ticket_photo(photo_b64: str) -> str:
+    """Decodifica y guarda una foto en base64 (data URL o crudo, App Móvil). Devuelve la ruta relativa guardada."""
+    if ',' in photo_b64 and photo_b64.strip().startswith('data:'):
+        header, photo_b64 = photo_b64.split(',', 1)
+        ext = 'jpg'
+        if 'png' in header:
+            ext = 'png'
+        elif 'webp' in header:
+            ext = 'webp'
+    else:
+        ext = 'jpg'
+
+    try:
+        raw = base64.b64decode(photo_b64, validate=True)
+    except Exception:
+        raise ValueError('La foto no es un base64 válido')
+
+    return _store_validated_photo_bytes(raw, ext)
+
+
 @bp.post('/mobile/tickets')
 @csrf.exempt
 @jwt_required
@@ -608,6 +619,8 @@ def _save_ticket_photo(photo_b64: str) -> str:
 def mobile_create_ticket():
     """Crea un ticket de campo desde la App Móvil (con foto). Queda visible al instante en la Web."""
     user = request.jwt_user
+    if user.role != 'requester':
+        return jsonify({'error': 'Solo un solicitante puede crear tickets'}), 403
     data = request.get_json(silent=True) or {}
 
     title = (data.get('title') or '').strip()
@@ -675,14 +688,19 @@ def mobile_create_ticket():
 @bp.get('/mobile/tickets')
 @jwt_required
 def mobile_list_tickets():
-    """Lista los tickets creados por el usuario autenticado de la App Móvil."""
+    """Lista los tickets relevantes para el usuario autenticado de la App Móvil:
+    los que él creó (solicitante) o los que tiene asignados (agente de campo)."""
     user = request.jwt_user
-    requester = Requester.query.filter_by(email=user.email).first()
 
-    if requester:
-        tickets = Ticket.query.filter_by(requester_id=requester.id).order_by(Ticket.created_at.desc()).all()
+    if user.role == 'agent':
+        team_member = TeamMember.query.filter_by(user_id=user.id).first()
+        if team_member:
+            tickets = Ticket.query.filter_by(assignee_team_member_id=team_member.id).order_by(Ticket.created_at.desc()).all()
+        else:
+            tickets = []
     else:
-        tickets = []
+        requester = Requester.query.filter_by(email=user.email).first()
+        tickets = Ticket.query.filter_by(requester_id=requester.id).order_by(Ticket.created_at.desc()).all() if requester else []
 
     return jsonify([{
         'id': t.id,
@@ -691,8 +709,45 @@ def mobile_list_tickets():
         'status': t.status,
         'priority': t.priority,
         'photo_url': _public_photo_url(t.photo_path),
+        'resolution_photo_url': _public_photo_url(t.resolution_photo_path),
         'created_at': t.created_at.isoformat(),
     } for t in tickets])
+
+
+@bp.post('/mobile/tickets/<int:ticket_id>/resolution-photo')
+@csrf.exempt
+@jwt_required
+@rate_limit(limit=20, window=60)
+def mobile_upload_resolution_photo(ticket_id):
+    """Sube (o reemplaza) la foto de resolución de un ticket. Solo agentes,
+    exclusivamente sobre tickets que tienen asignados (no sobre cualquier
+    ticket del sistema)."""
+    user = request.jwt_user
+    if user.role != 'agent':
+        return jsonify({'error': 'Solo un agente puede subir la foto de resolución'}), 403
+
+    team_member = TeamMember.query.filter_by(user_id=user.id).first()
+    ticket = Ticket.query.get_or_404(ticket_id)
+    if not team_member or ticket.assignee_team_member_id != team_member.id:
+        return jsonify({'error': 'No tenés este ticket asignado'}), 403
+
+    data = request.get_json(silent=True) or {}
+    photo_b64 = data.get('photo_base64')
+    if not photo_b64:
+        return jsonify({'error': 'photo_base64 es requerido'}), 400
+
+    try:
+        ticket.resolution_photo_path = _save_ticket_photo(photo_b64)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
+    db.session.add(TicketEvent(ticket_id=ticket.id, user_id=user.id, body='Foto de resolución agregada (App Móvil)'))
+    db.session.commit()
+
+    return jsonify({
+        'id': ticket.id,
+        'resolution_photo_url': _public_photo_url(ticket.resolution_photo_path),
+    })
 
 
 @bp.post('/tickets/<int:ticket_id>/feedback')

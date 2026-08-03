@@ -53,7 +53,11 @@ export default function TicketsScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        ListEmptyComponent={<Text style={styles.empty}>Aún no has creado tickets desde el campo.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {user?.role === 'agent' ? 'No tenés tickets asignados por el momento.' : 'Aún no has creado tickets desde el campo.'}
+          </Text>
+        }
         renderItem={({ item }) => {
           const status = STATUS_STYLE[item.status] || STATUS_STYLE.open;
           const priority = PRIORITY_STYLE[item.priority] || PRIORITY_STYLE.medium;
@@ -86,9 +90,11 @@ export default function TicketsScreen({ navigation }) {
         }}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NewTicket')}>
-        <Text style={styles.fabText}>+ Nuevo ticket</Text>
-      </TouchableOpacity>
+      {user?.role !== 'agent' && (
+        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NewTicket')}>
+          <Text style={styles.fabText}>+ Nuevo ticket</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

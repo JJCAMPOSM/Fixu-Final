@@ -32,3 +32,6 @@ export const listTickets = (token) => request('/tickets', { token });
 
 export const createTicket = (token, { title, body, priority, photo_base64 }) =>
   request('/tickets', { method: 'POST', token, body: { title, body, priority, photo_base64 } });
+
+export const uploadResolutionPhoto = (token, ticketId, photo_base64) =>
+  request(`/tickets/${ticketId}/resolution-photo`, { method: 'POST', token, body: { photo_base64 } });

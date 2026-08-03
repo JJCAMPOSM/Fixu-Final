@@ -181,7 +181,9 @@ def show(ticket_id):
 
     comment_form = CommentForm()
     has_feedback = SatisfactionTicket.query.filter_by(ticket_id=ticket_id).first() is not None
-    return render_template('tickets/show.html', ticket=ticket, comment_form=comment_form, has_feedback=has_feedback)
+    return render_template(
+        'tickets/show.html', ticket=ticket, comment_form=comment_form, has_feedback=has_feedback
+    )
 
 
 @bp.route('/<int:ticket_id>/comment', methods=['POST'])

@@ -91,6 +91,7 @@ class Ticket(db.Model, TimestampMixin):
     priority = db.Column(db.String(20), nullable=False, default='medium')  # low|medium|high
     rating = db.Column(db.Integer, nullable=False, default=0)
     photo_path = db.Column(db.String(255), nullable=True)  # foto adjunta desde la App Móvil
+    resolution_photo_path = db.Column(db.String(255), nullable=True)  # foto de resolución subida por agente/admin desde la web
     source = db.Column(db.String(20), nullable=False, default='web')  # web|mobile
 
     requester = db.relationship('Requester', back_populates='tickets')
@@ -99,6 +100,27 @@ class Ticket(db.Model, TimestampMixin):
     category = db.relationship('Category', back_populates='tickets')
     comments = db.relationship('Comment', back_populates='ticket', cascade='all, delete-orphan')
     events = db.relationship('TicketEvent', back_populates='ticket', cascade='all, delete-orphan')
+
+    @staticmethod
+    def _photo_web_url(photo_path):
+        """URL relativa (mismo origen) para servir una foto vía la ruta
+        autenticada /uploads/tickets/<archivo>. A diferencia de
+        _public_photo_url (usado por la App Móvil, que necesita una URL
+        absoluta con PUBLIC_BASE_URL), la web puede usar una ruta relativa
+        normal porque el navegador ya está en el mismo origen."""
+        if not photo_path:
+            return None
+        from flask import url_for
+        filename = photo_path.rsplit('/', 1)[-1]
+        return url_for('api.ticket_photo', filename=filename)
+
+    @property
+    def photo_url(self):
+        return self._photo_web_url(self.photo_path)
+
+    @property
+    def resolution_photo_url(self):
+        return self._photo_web_url(self.resolution_photo_path)
 
 
 class Comment(db.Model, TimestampMixin):

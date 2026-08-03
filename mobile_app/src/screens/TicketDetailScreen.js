@@ -1,14 +1,42 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { uploadResolutionPhoto } from '../api';
 
 export default function TicketDetailScreen({ route }) {
-  const { ticket } = route.params;
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const [ticket, setTicket] = useState(route.params.ticket);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const status = STATUS_STYLE[ticket.status] || STATUS_STYLE.open;
   const priority = PRIORITY_STYLE[ticket.priority] || PRIORITY_STYLE.medium;
   const createdAt = ticket.created_at ? new Date(ticket.created_at) : null;
+
+  const takeResolutionPhoto = async () => {
+    setUploadError('');
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      setUploadError('Se necesita permiso de cámara para capturar la evidencia de resolución.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.5 });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setUploading(true);
+    try {
+      const asset = result.assets[0];
+      const photo_base64 = `data:image/jpeg;base64,${asset.base64}`;
+      const data = await uploadResolutionPhoto(token, ticket.id, photo_base64);
+      setTicket((t) => ({ ...t, resolution_photo_url: data.resolution_photo_url }));
+    } catch (e) {
+      setUploadError(e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
@@ -20,6 +48,34 @@ export default function TicketDetailScreen({ route }) {
       ) : (
         <View style={[styles.photo, styles.photoPlaceholder]}>
           <Text style={{ color: colors.textMuted }}>Sin evidencia fotográfica</Text>
+        </View>
+      )}
+
+      {ticket.resolution_photo_url && (
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Foto de resolución</Text>
+          <Image
+            source={{ uri: ticket.resolution_photo_url, headers: { Authorization: `Bearer ${token}` } }}
+            style={[styles.photo, { marginTop: 8, marginBottom: 0 }]}
+          />
+        </View>
+      )}
+
+      {user?.role === 'agent' && (
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>
+            {ticket.resolution_photo_url ? 'Reemplazar foto de resolución' : 'Foto de resolución'}
+          </Text>
+          {!!uploadError && <Text style={{ color: colors.danger, marginBottom: 8 }}>{uploadError}</Text>}
+          <TouchableOpacity style={styles.resolutionButton} onPress={takeResolutionPhoto} disabled={uploading}>
+            {uploading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.resolutionButtonText}>
+                📷 {ticket.resolution_photo_url ? 'Tomar otra foto' : 'Tomar foto de resolución'}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       )}
 
@@ -67,4 +123,6 @@ const styles = StyleSheet.create({
   },
   cardLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4, fontWeight: '600' },
   cardBody: { fontSize: 15, color: colors.text, lineHeight: 21 },
+  resolutionButton: { backgroundColor: colors.primary, borderRadius: 10, padding: 12, marginTop: 8 },
+  resolutionButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 14 },
 });

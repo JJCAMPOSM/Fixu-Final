@@ -43,6 +43,34 @@
             </div>
         </div>
 
+        {% if ticket.photo_url %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6">Foto del reporte (adjunta por el solicitante)</h3>
+                <a href="{{ ticket.photo_url }}" target="_blank" rel="noopener">
+                    <img src="{{ ticket.photo_url }}" alt="Foto del reporte" class="img-fluid rounded" style="max-height: 400px;">
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if ticket.resolution_photo_url %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6">Foto de resolución</h3>
+                <a href="{{ ticket.resolution_photo_url }}" target="_blank" rel="noopener">
+                    <img src="{{ ticket.resolution_photo_url }}" alt="Foto de resolución" class="img-fluid rounded" style="max-height: 400px;">
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if current_user.role == 'agent' and not ticket.resolution_photo_url %}
+        <div class="alert alert-info mt-3 py-2 small mb-0">
+            Todavía no subiste la foto de resolución. Subila desde la App Móvil (Fixu Campo) una vez que termines el arreglo en sitio.
+        </div>
+        {% endif %}
+
         <h2 class="h5 mt-4">Comentarios</h2>
         <div class="vstack gap-3">
             {% for c in ticket.comments %}
