@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ActivityIndicator, ScrollView,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { createTicket } from '../api';
-import { colors, PRIORITY_STYLE } from '../theme';
+import { colors, radius, PRIORITY_STYLE } from '../theme';
 import FieldModeBadge from '../components/FieldModeBadge';
+import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
 
 const PRIORITIES = ['low', 'medium', 'high'];
@@ -149,9 +150,9 @@ export default function NewTicketScreen({ navigation }) {
 
       {!!error && <Text style={styles.error}>{error}</Text>}
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Enviar reporte</Text>}
-      </TouchableOpacity>
+      <View style={{ marginTop: 20 }}>
+        <Button label="Enviar reporte" onPress={handleSubmit} loading={loading} />
+      </View>
       <TouchableOpacity style={styles.cancel} onPress={() => navigation.goBack()}>
         <Text style={styles.cancelText}>Cancelar</Text>
       </TouchableOpacity>
@@ -160,29 +161,26 @@ export default function NewTicketScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  title: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 8 },
-  label: { color: colors.textMuted, marginBottom: 6, marginTop: 14, fontSize: 13 },
+  container: { flex: 1, backgroundColor: colors.pageBg },
+  label: { color: colors.textSecondary, marginBottom: 6, marginTop: 14, fontSize: 13 },
   input: {
-    backgroundColor: colors.surface, color: colors.text, borderRadius: 10, padding: 12,
+    backgroundColor: colors.white, color: colors.textPrimary, borderRadius: radius.sm, padding: 12,
     fontSize: 15, borderWidth: 1, borderColor: colors.border,
   },
   textarea: { height: 100, textAlignVertical: 'top' },
   row: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
-  preview: { width: '100%', height: 180, borderRadius: 10, marginBottom: 6, backgroundColor: colors.surface },
+  chipTextActive: { color: colors.white },
+  preview: { width: '100%', height: 180, borderRadius: radius.sm, marginBottom: 6, backgroundColor: colors.white },
   previewPlaceholder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
-  gpsBadge: { backgroundColor: colors.infoBg, borderRadius: 8, padding: 8, marginTop: 4 },
+  gpsBadge: { backgroundColor: colors.infoBg, borderRadius: radius.sm, padding: 8, marginTop: 4 },
   gpsText: { color: colors.info, fontSize: 12, fontWeight: '600' },
   gpsError: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
-  cameraButton: { backgroundColor: colors.primary, borderRadius: 10, padding: 12, marginTop: 10 },
-  cameraButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 14 },
+  cameraButton: { backgroundColor: colors.accent, borderRadius: radius.sm, padding: 12, marginTop: 10 },
+  cameraButtonText: { color: colors.white, textAlign: 'center', fontWeight: '600', fontSize: 14 },
   hint: { color: colors.textMuted, fontSize: 11, marginTop: 6, textAlign: 'center' },
   error: { color: colors.danger, marginTop: 14 },
-  button: { backgroundColor: colors.primary, borderRadius: 10, padding: 14, marginTop: 20 },
-  buttonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 16 },
   cancel: { padding: 14, marginBottom: 30 },
   cancelText: { color: colors.textMuted, textAlign: 'center' },
 });

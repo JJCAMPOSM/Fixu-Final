@@ -146,6 +146,48 @@ class TicketEvent(db.Model, TimestampMixin):
     user = db.relationship('User', back_populates='ticket_events')
 
 
+class MaintenanceTask(db.Model, TimestampMixin):
+    __tablename__ = 'maintenance_tasks'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    location = db.Column(db.String(200), nullable=True)
+    assignee_team_member_id = db.Column(db.Integer, db.ForeignKey('team_members.id'), nullable=False)
+    scheduled_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending|done
+
+    assignee = db.relationship('TeamMember')
+    checklist_items = db.relationship(
+        'ChecklistItem', back_populates='maintenance_task',
+        cascade='all, delete-orphan', order_by='ChecklistItem.id',
+    )
+
+
+class ChecklistItem(db.Model, TimestampMixin):
+    __tablename__ = 'checklist_items'
+    id = db.Column(db.Integer, primary_key=True)
+    maintenance_task_id = db.Column(db.Integer, db.ForeignKey('maintenance_tasks.id'), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    is_done = db.Column(db.Boolean, nullable=False, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    maintenance_task = db.relationship('MaintenanceTask', back_populates='checklist_items')
+
+
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # Se guarda el hash del token, nunca el token en claro (mismo criterio
+    # que password_hash): si la BD se filtra, no alcanza para resetear cuentas.
+    token_hash = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    user = db.relationship('User')
+
+
 class SatisfactionTicket(db.Model, TimestampMixin):
     __tablename__ = 'satisfaccion_tickets'
     id = db.Column(db.Integer, primary_key=True)

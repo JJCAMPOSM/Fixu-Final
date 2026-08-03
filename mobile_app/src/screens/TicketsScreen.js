@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { listTickets } from '../api';
-import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
+import { colors, typography, radius, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import FieldModeBadge from '../components/FieldModeBadge';
+import Badge from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
 
 export default function TicketsScreen({ navigation }) {
-  const { token, user, logout } = useAuth();
+  const { token, user } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -37,12 +39,17 @@ export default function TicketsScreen({ navigation }) {
         <FieldModeBadge />
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.headerTitle}>Hola, {user?.name?.split(' ')[0] || 'Agente'} 👋</Text>
-            <Text style={styles.headerSubtitle}>{activeCount} ticket(s) activos</Text>
+            <Text style={[typography.pageTitle, { fontSize: 20 }]}>Hola, {user?.name?.split(' ')[0] || 'Agente'} 👋</Text>
+            <Text style={styles.headerSubtitle}>{activeCount} reporte(s) activos</Text>
           </View>
-          <TouchableOpacity onPress={logout}>
-            <Text style={styles.logout}>Salir</Text>
-          </TouchableOpacity>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 14 }}>
+              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+              <Ionicons name="person-circle-outline" size={24} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -51,11 +58,12 @@ export default function TicketsScreen({ navigation }) {
       <FlatList
         data={tickets}
         keyExtractor={(item) => String(item.id)}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         ListEmptyComponent={
           <Text style={styles.empty}>
-            {user?.role === 'agent' ? 'No tenés tickets asignados por el momento.' : 'Aún no has creado tickets desde el campo.'}
+            {user?.role === 'agent' ? 'No tenés tickets asignados por el momento.' : 'Aún no has creado reportes desde el campo.'}
           </Text>
         }
         renderItem={({ item }) => {
@@ -64,10 +72,7 @@ export default function TicketsScreen({ navigation }) {
           return (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TicketDetail', { ticket: item })} activeOpacity={0.8}>
               {item.photo_url ? (
-                <Image
-                  source={{ uri: item.photo_url, headers: { Authorization: `Bearer ${token}` } }}
-                  style={styles.thumb}
-                />
+                <Image source={{ uri: item.photo_url, headers: { Authorization: `Bearer ${token}` } }} style={styles.thumb} />
               ) : (
                 <View style={[styles.thumb, styles.thumbPlaceholder]}>
                   <Text style={{ fontSize: 18 }}>📋</Text>
@@ -76,15 +81,11 @@ export default function TicketsScreen({ navigation }) {
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
                 <View style={styles.badgeRow}>
-                  <View style={[styles.badge, { backgroundColor: status.bg }]}>
-                    <Text style={[styles.badgeText, { color: status.fg }]}>{status.label}</Text>
-                  </View>
-                  <View style={[styles.badge, { backgroundColor: priority.bg }]}>
-                    <Text style={[styles.badgeText, { color: priority.fg }]}>{priority.label}</Text>
-                  </View>
+                  <Badge label={status.label} bg={status.bg} fg={status.fg} />
+                  <Badge label={priority.label} bg={priority.bg} fg={priority.fg} />
                 </View>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
             </TouchableOpacity>
           );
         }}
@@ -92,7 +93,7 @@ export default function TicketsScreen({ navigation }) {
 
       {user?.role !== 'agent' && (
         <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NewTicket')}>
-          <Text style={styles.fabText}>+ Nuevo ticket</Text>
+          <Text style={styles.fabText}>+ Nuevo reporte</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -100,30 +101,26 @@ export default function TicketsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.pageBg },
   header: { padding: 16, paddingTop: 52 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { color: colors.text, fontSize: 22, fontWeight: '700' },
+  headerIcons: { flexDirection: 'row', alignItems: 'center' },
   headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
-  logout: { color: colors.danger, fontWeight: '600' },
   error: { color: colors.danger, paddingHorizontal: 16 },
   empty: { color: colors.textMuted, textAlign: 'center', marginTop: 40 },
   card: {
-    flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 14,
+    flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.md,
     padding: 12, marginBottom: 10, alignItems: 'center',
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1,
   },
-  thumb: { width: 52, height: 52, borderRadius: 10, marginRight: 12, backgroundColor: colors.background },
+  thumb: { width: 52, height: 52, borderRadius: 10, marginRight: 12, backgroundColor: colors.pageBg },
   thumbPlaceholder: { justifyContent: 'center', alignItems: 'center' },
-  cardTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  cardTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
-  badge: { borderRadius: 20, paddingVertical: 3, paddingHorizontal: 9, marginRight: 6 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  chevron: { color: colors.textMuted, fontSize: 22, marginLeft: 6 },
   fab: {
-    position: 'absolute', bottom: 24, right: 24, backgroundColor: colors.primary,
-    borderRadius: 30, paddingVertical: 14, paddingHorizontal: 20,
+    position: 'absolute', bottom: 24, right: 24, backgroundColor: colors.accent,
+    borderRadius: radius.pill, paddingVertical: 14, paddingHorizontal: 20,
     shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  fabText: { color: '#fff', fontWeight: '700' },
+  fabText: { color: colors.white, fontWeight: '700' },
 });

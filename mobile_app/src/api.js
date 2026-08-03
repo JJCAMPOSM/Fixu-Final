@@ -35,3 +35,25 @@ export const createTicket = (token, { title, body, priority, photo_base64 }) =>
 
 export const uploadResolutionPhoto = (token, ticketId, photo_base64) =>
   request(`/tickets/${ticketId}/resolution-photo`, { method: 'POST', token, body: { photo_base64 } });
+
+export const submitFeedback = (token, ticketId, calificacion, comentario) =>
+  request(`/tickets/${ticketId}/feedback`, { method: 'POST', token, body: { calificacion, comentario } });
+
+export const listNotifications = (token) => request('/notifications', { token });
+
+export const forgotPassword = (email) =>
+  request('/forgot-password', { method: 'POST', body: { email } });
+
+export const resetPassword = (resetToken, new_password) =>
+  request('/reset-password', { method: 'POST', body: { token: resetToken, new_password } });
+
+export const changePassword = (token, current_password, new_password) =>
+  request('/change-password', { method: 'POST', token, body: { current_password, new_password } });
+
+export const listMaintenance = (token, month) =>
+  request(`/maintenance${month ? `?month=${month}` : ''}`, { token });
+
+export const getMaintenanceDetail = (token, taskId) => request(`/maintenance/${taskId}`, { token });
+
+export const toggleChecklistItem = (token, taskId, itemId) =>
+  request(`/maintenance/${taskId}/checklist/${itemId}/toggle`, { method: 'POST', token });

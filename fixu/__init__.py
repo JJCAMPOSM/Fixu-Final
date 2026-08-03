@@ -111,6 +111,48 @@ def create_app():
     return app
 
 
+def _seed_maintenance_tasks(member):
+    """Tareas de mantenimiento de ejemplo para el técnico demo, con checklist."""
+    from datetime import date, timedelta
+    from .models import MaintenanceTask, ChecklistItem
+
+    today = date.today()
+    tasks = [
+        dict(
+            title='Mantenimiento preventivo — Proyector Epson X24',
+            description='Revisión trimestral de proyectores del edificio A.',
+            location='Aula 101',
+            scheduled_date=today + timedelta(days=1),
+            checklist=['Limpiar filtro de aire', 'Verificar lámpara', 'Probar conexión HDMI/VGA', 'Actualizar firmware'],
+        ),
+        dict(
+            title='Revisión de aire acondicionado',
+            description='Chequeo de unidades split antes de temporada alta.',
+            location='Laboratorio 3',
+            scheduled_date=today + timedelta(days=3),
+            checklist=['Limpiar filtros', 'Revisar nivel de refrigerante', 'Probar termostato'],
+        ),
+        dict(
+            title='Mantenimiento de red — switches piso 2',
+            description='Revisión de switches y cableado estructurado.',
+            location='Piso 2, cuarto de telecom',
+            scheduled_date=today - timedelta(days=2),
+            checklist=['Revisar luces de puertos', 'Etiquetar cableado suelto', 'Reiniciar switch principal'],
+        ),
+    ]
+    for t in tasks:
+        task = MaintenanceTask(
+            title=t['title'], description=t['description'], location=t['location'],
+            assignee_team_member_id=member.id, scheduled_date=t['scheduled_date'],
+            status='pending',
+        )
+        db.session.add(task)
+        db.session.flush()
+        for desc in t['checklist']:
+            db.session.add(ChecklistItem(maintenance_task_id=task.id, description=desc))
+    db.session.commit()
+
+
 def maybe_bootstrap_db():
     """Crea tablas y datos mínimos de desarrollo si la BD está vacía."""
     from .models import User, Team, TeamMember, Requester, Ticket, Category
@@ -155,6 +197,8 @@ def maybe_bootstrap_db():
         )
         db.session.add(ticket)
         db.session.commit()
+
+        _seed_maintenance_tasks(member)
 
 
 def register_commands(app):
@@ -202,6 +246,8 @@ def register_commands(app):
             )
             db.session.add(ticket)
             db.session.commit()
+
+            _seed_maintenance_tasks(member)
         click.echo('Datos de ejemplo creados (si no existían).')
 
     @app.cli.command('create-admin')

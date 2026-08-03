@@ -19,6 +19,7 @@ async def _forward_to_flask(
     path: str,
     authorization: Optional[str],
     json_body: Optional[dict],
+    params: Optional[dict] = None,
 ):
     headers = {}
     if authorization:
@@ -26,7 +27,7 @@ async def _forward_to_flask(
     try:
         response = await http_client.request(
             method, f"{settings.FLASK_APP_URL}/api/mobile/{path}",
-            json=json_body, headers=headers,
+            json=json_body, headers=headers, params=params,
         )
     except httpx.HTTPError:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="No se pudo contactar al backend Flask")
@@ -97,3 +98,104 @@ async def mobile_list_tickets(
     settings: Settings = Depends(get_settings),
 ):
     return await _forward_to_flask(http_client, settings, "GET", "tickets", authorization, None)
+
+
+@router.post("/tickets/{ticket_id}/resolution-photo", dependencies=[Depends(rate_limit_dependency(limit=20, window=60))])
+async def mobile_upload_resolution_photo(
+    ticket_id: int,
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Sube la foto de resolución de un ticket (agente). Antes esta ruta no
+    existía en el bridge, así que la App Móvil recibía 404 al intentarlo pese
+    a que Flask ya soportaba el endpoint."""
+    return await _forward_to_flask(
+        http_client, settings, "POST", f"tickets/{ticket_id}/resolution-photo", authorization, payload,
+    )
+
+
+@router.post("/tickets/{ticket_id}/feedback", dependencies=[Depends(rate_limit_dependency(limit=20, window=60))])
+async def mobile_submit_feedback(
+    ticket_id: int,
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Calificación de satisfacción de un ticket cerrado (solicitante)."""
+    return await _forward_to_flask(
+        http_client, settings, "POST", f"tickets/{ticket_id}/feedback", authorization, payload,
+    )
+
+
+@router.get("/notifications")
+async def mobile_notifications(
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(http_client, settings, "GET", "notifications", authorization, None)
+
+
+@router.post("/forgot-password", dependencies=[Depends(rate_limit_dependency(limit=4, window=300))])
+async def mobile_forgot_password(
+    payload: dict = Body(...),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(http_client, settings, "POST", "forgot-password", None, payload)
+
+
+@router.post("/reset-password", dependencies=[Depends(rate_limit_dependency(limit=6, window=300))])
+async def mobile_reset_password(
+    payload: dict = Body(...),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(http_client, settings, "POST", "reset-password", None, payload)
+
+
+@router.post("/change-password", dependencies=[Depends(rate_limit_dependency(limit=10, window=300))])
+async def mobile_change_password(
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(http_client, settings, "POST", "change-password", authorization, payload)
+
+
+@router.get("/maintenance")
+async def mobile_list_maintenance(
+    month: Optional[str] = None,
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    params = {"month": month} if month else None
+    return await _forward_to_flask(http_client, settings, "GET", "maintenance", authorization, None, params=params)
+
+
+@router.get("/maintenance/{task_id}")
+async def mobile_maintenance_detail(
+    task_id: int,
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(http_client, settings, "GET", f"maintenance/{task_id}", authorization, None)
+
+
+@router.post("/maintenance/{task_id}/checklist/{item_id}/toggle")
+async def mobile_toggle_checklist_item(
+    task_id: int,
+    item_id: int,
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    return await _forward_to_flask(
+        http_client, settings, "POST", f"maintenance/{task_id}/checklist/{item_id}/toggle", authorization, {},
+    )

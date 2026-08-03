@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
+import { colors, radius, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { uploadResolutionPhoto } from '../api';
+import Badge from '../components/Badge';
+import Card from '../components/Card';
+import Button from '../components/Button';
 
-export default function TicketDetailScreen({ route }) {
+export default function TicketDetailScreen({ route, navigation }) {
   const { token, user } = useAuth();
   const [ticket, setTicket] = useState(route.params.ticket);
   const [uploading, setUploading] = useState(false);
@@ -38,6 +41,8 @@ export default function TicketDetailScreen({ route }) {
     }
   };
 
+  const canEvaluate = user?.role === 'requester' && ticket.status === 'closed' && !ticket.has_feedback;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       {ticket.photo_url ? (
@@ -52,40 +57,32 @@ export default function TicketDetailScreen({ route }) {
       )}
 
       {ticket.resolution_photo_url && (
-        <View style={styles.card}>
+        <Card style={{ marginBottom: 12 }}>
           <Text style={styles.cardLabel}>Foto de resolución</Text>
           <Image
             source={{ uri: ticket.resolution_photo_url, headers: { Authorization: `Bearer ${token}` } }}
             style={[styles.photo, { marginTop: 8, marginBottom: 0 }]}
           />
-        </View>
+        </Card>
       )}
 
       {user?.role === 'agent' && (
-        <View style={styles.card}>
+        <Card style={{ marginBottom: 12 }}>
           <Text style={styles.cardLabel}>
             {ticket.resolution_photo_url ? 'Reemplazar foto de resolución' : 'Foto de resolución'}
           </Text>
           {!!uploadError && <Text style={{ color: colors.danger, marginBottom: 8 }}>{uploadError}</Text>}
-          <TouchableOpacity style={styles.resolutionButton} onPress={takeResolutionPhoto} disabled={uploading}>
-            {uploading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.resolutionButtonText}>
-                📷 {ticket.resolution_photo_url ? 'Tomar otra foto' : 'Tomar foto de resolución'}
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
+          <Button
+            label={`📷 ${ticket.resolution_photo_url ? 'Tomar otra foto' : 'Tomar foto de resolución'}`}
+            onPress={takeResolutionPhoto}
+            loading={uploading}
+          />
+        </Card>
       )}
 
       <View style={styles.badgeRow}>
-        <View style={[styles.badge, { backgroundColor: status.bg }]}>
-          <Text style={[styles.badgeText, { color: status.fg }]}>{status.label}</Text>
-        </View>
-        <View style={[styles.badge, { backgroundColor: priority.bg }]}>
-          <Text style={[styles.badgeText, { color: priority.fg }]}>Prioridad {priority.label}</Text>
-        </View>
+        <Badge label={status.label} bg={status.bg} fg={status.fg} />
+        <Badge label={`Prioridad ${priority.label}`} bg={priority.bg} fg={priority.fg} />
       </View>
 
       <Text style={styles.title}>{ticket.title}</Text>
@@ -95,34 +92,34 @@ export default function TicketDetailScreen({ route }) {
         </Text>
       )}
 
-      <View style={styles.card}>
+      <Card style={{ marginBottom: 12 }}>
         <Text style={styles.cardLabel}>Descripción de la falla</Text>
         <Text style={styles.cardBody}>{ticket.body}</Text>
-      </View>
+      </Card>
 
-      <View style={styles.card}>
+      <Card style={{ marginBottom: 12 }}>
         <Text style={styles.cardLabel}>Folio</Text>
         <Text style={styles.cardBody}>#{ticket.id}</Text>
-      </View>
+      </Card>
+
+      {canEvaluate && (
+        <TouchableOpacity style={styles.evaluateLink} onPress={() => navigation.navigate('EvaluateAttention', { ticket })}>
+          <Text style={styles.evaluateLinkText}>⭐ Evaluar la atención recibida</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  photo: { width: '100%', height: 220, borderRadius: 14, backgroundColor: colors.surface, marginBottom: 14 },
+  container: { flex: 1, backgroundColor: colors.pageBg },
+  photo: { width: '100%', height: 220, borderRadius: radius.lg, backgroundColor: colors.white, marginBottom: 14 },
   photoPlaceholder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
   badgeRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  badge: { borderRadius: 20, paddingVertical: 4, paddingHorizontal: 10, marginRight: 8 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  title: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
   date: { fontSize: 12, color: colors.textMuted, marginTop: 4, marginBottom: 16 },
-  card: {
-    backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 12,
-    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1,
-  },
   cardLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4, fontWeight: '600' },
-  cardBody: { fontSize: 15, color: colors.text, lineHeight: 21 },
-  resolutionButton: { backgroundColor: colors.primary, borderRadius: 10, padding: 12, marginTop: 8 },
-  resolutionButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 14 },
+  cardBody: { fontSize: 15, color: colors.textPrimary, lineHeight: 21 },
+  evaluateLink: { padding: 14, alignItems: 'center' },
+  evaluateLinkText: { color: colors.accent, fontWeight: '700', fontSize: 14 },
 });

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { colors } from '../theme';
+import { colors, typography, radius } from '../theme';
 import PasswordInput from '../components/PasswordInput';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -44,18 +46,12 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingTop: 40 }}>
-      <Text style={styles.title}>Crear cuenta</Text>
+      <Text style={[typography.pageTitle, { textAlign: 'center' }]}>Crear cuenta</Text>
       <Text style={styles.subtitle}>Regístrate para reportar fallas desde el campo</Text>
 
-      <View style={styles.card}>
+      <Card>
         <Text style={styles.label}>Nombre completo</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Tu nombre"
-          placeholderTextColor={colors.textMuted}
-          value={name}
-          onChangeText={setName}
-        />
+        <TextInput style={styles.input} placeholder="Tu nombre" placeholderTextColor={colors.textMuted} value={name} onChangeText={setName} />
 
         <Text style={styles.label}>Correo</Text>
         <TextInput
@@ -76,34 +72,27 @@ export default function RegisterScreen({ navigation }) {
 
         {!!error && <Text style={styles.error}>{error}</Text>}
 
-        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Crear cuenta</Text>}
-        </TouchableOpacity>
+        <View style={{ marginTop: 20 }}>
+          <Button label="Crear cuenta" onPress={handleSubmit} loading={loading} />
+        </View>
 
         <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
           <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
         </TouchableOpacity>
-      </View>
+      </Card>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: colors.pageBg },
   subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 24 },
-  card: {
-    backgroundColor: colors.surface, borderRadius: 16, padding: 20,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2,
-  },
-  label: { color: colors.textMuted, fontSize: 13, marginBottom: 6, marginTop: 10 },
+  label: { color: colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 10 },
   input: {
-    backgroundColor: colors.background, color: colors.text, borderRadius: 10, padding: 14,
+    backgroundColor: colors.pageBg, color: colors.textPrimary, borderRadius: radius.sm, padding: 14,
     fontSize: 16, borderWidth: 1, borderColor: colors.border,
   },
-  button: { backgroundColor: colors.primary, borderRadius: 10, padding: 14, marginTop: 20 },
-  buttonText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 16 },
   error: { color: colors.danger, marginTop: 10 },
   link: { marginTop: 16, padding: 4 },
-  linkText: { color: colors.primary, textAlign: 'center', fontWeight: '600', fontSize: 13 },
+  linkText: { color: colors.accent, textAlign: 'center', fontWeight: '600', fontSize: 13 },
 });
