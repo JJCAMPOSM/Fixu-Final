@@ -7,9 +7,24 @@ from ..extensions import db
 from ..models import Team, TeamMember, User
 
 
+def is_admin():
+    return current_user.is_authenticated and current_user.role == 'admin'
+
+
+def is_admin_or_agent():
+    return current_user.is_authenticated and current_user.role in ('admin', 'agent')
+
+
 @bp.route('/')
 @login_required
 def index():
+    # El solicitante no administra equipos (igual que categorías/agentes);
+    # antes solo exigía login, así que cualquier solicitante podía ver el
+    # listado completo de equipos y sus agentes.
+    if not is_admin():
+        flash('No autorizado. Solo administradores pueden acceder a esta sección.', 'danger')
+        return redirect(url_for('tickets.index'))
+
     query = Team.query.order_by(Team.created_at.desc())
     page = request.args.get('page', 1, type=int)
     pagination = query.paginate(page=page, per_page=10)
@@ -97,9 +112,16 @@ def remove_member(team_id, member_id):
 @bp.route('/<int:team_id>/members/api', methods=['GET'])
 @login_required
 def get_team_members_api(team_id):
-    """API endpoint to get team members as JSON for dynamic dropdown filtering"""
+    """API endpoint to get team members as JSON for dynamic dropdown filtering.
+
+    Solo admin/agente: es usado para el selector de asignación de tickets,
+    que el solicitante no usa; sin este chequeo, cualquier solicitante podía
+    enumerar team_id y obtener nombres/emails de todos los agentes."""
     from flask import jsonify
-    
+
+    if not is_admin_or_agent():
+        return jsonify({'error': 'No autorizado'}), 403
+
     team = Team.query.get_or_404(team_id)
     members = TeamMember.query.filter_by(team_id=team_id).all()
     

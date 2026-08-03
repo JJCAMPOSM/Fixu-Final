@@ -9,6 +9,8 @@ from typing import Optional
 from config import Settings, get_settings
 from routers import sync, bridge, webhooks, mobile
 
+MAX_BODY_SIZE = 8 * 1024 * 1024  # 8 MB, igual que MAX_CONTENT_LENGTH en Flask
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,6 +45,33 @@ app.add_middleware(
 from fastapi import Request
 from fastapi.responses import JSONResponse
 import ipaddress
+
+@app.middleware("http")
+async def body_size_limit_middleware(request: Request, call_next):
+    """Límite de tamaño de body como defensa en profundidad: nginx ya limita
+    client_max_body_size, pero si bridge_api llegara a exponerse sin pasar
+    por nginx (ej. acceso directo en la red interna), esto evita payloads
+    gigantes."""
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > MAX_BODY_SIZE:
+        return JSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={"detail": "Payload demasiado grande"}
+        )
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Cabeceras de seguridad HTTP (defensa en profundidad): esta es una API
+    JSON, no debería renderizarse embebida en un iframe ni ser sniffeada
+    como HTML/script por el navegador de un cliente."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 @app.middleware("http")
 async def ip_whitelist_middleware(request: Request, call_next):

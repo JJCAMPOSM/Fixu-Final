@@ -115,7 +115,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:8',
         ]);
         
         $user = new User();

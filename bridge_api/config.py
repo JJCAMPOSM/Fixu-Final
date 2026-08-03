@@ -14,15 +14,15 @@ class Settings(BaseSettings):
     FLASK_APP_URL: str = os.getenv("FLASK_APP_URL", "http://flask_app:5000")
     LARAVEL_ADMIN_URL: str = os.getenv("LARAVEL_ADMIN_URL", "http://laravel_admin:80")
     
-    # API Keys para autenticación entre servicios
-    INTERNAL_API_KEY: str = os.getenv("INTERNAL_API_KEY", "internal-secret-key")
-    HMAC_SECRET_KEY: str = os.getenv("HMAC_SECRET_KEY", "default-hmac-secret")
-    
-    # Base de datos (compartida con Flask)
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://fixu_user:fixu_password@db:5432/fixu"
-    )
+    # API Keys para autenticación entre servicios. Sin default: si la env var
+    # falta, pydantic-settings falla al arrancar en vez de aceptar un secreto
+    # público conocido (compartido con fixu/config.py y Laravel).
+    INTERNAL_API_KEY: str
+    HMAC_SECRET_KEY: str
+
+    # Base de datos (compartida con Flask). Sin default: una contraseña de
+    # Postgres predecible (fixu_password) no debe poder colarse en producción.
+    DATABASE_URL: str
 
     # Redis para Rate Limiting global (compartido con las réplicas de Flask)
     REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")

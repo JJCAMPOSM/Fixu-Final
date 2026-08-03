@@ -1,4 +1,4 @@
-from flask import jsonify, request, current_app, url_for
+from flask import jsonify, request, current_app, url_for, send_from_directory
 from datetime import datetime, timedelta
 from functools import wraps
 from flask_login import login_required, current_user
@@ -7,20 +7,29 @@ import re
 import hmac
 import hashlib
 import base64
+import io
 import uuid
 import jwt as pyjwt
+from PIL import Image, UnidentifiedImageError
 
 from . import bp
 from .. import db
 from ..extensions import csrf
 from ..models import TeamMember, SatisfactionTicket, Ticket, User, Team, Requester, Category, TicketEvent
 from ..services.bridge_client import get_bridge_client
-from ..rate_limiter import rate_limit, get_redis
+from ..rate_limiter import (
+    rate_limit, get_redis, is_account_locked, register_failed_login,
+    clear_failed_login, DUMMY_PASSWORD_HASH,
+)
 import redis as _redis_module
+import bcrypt
 
 
 def _public_photo_url(photo_path):
-    """Construye una URL de foto alcanzable desde la App Móvil.
+    """Construye una URL de foto alcanzable desde la App Móvil, servida por la
+    ruta autenticada /uploads/tickets/<archivo> (ver más abajo) en vez de
+    /static/uploads/ directo: así solo el dueño del ticket (o un agente/admin)
+    puede verla, no cualquiera que adivine o intercepte la URL.
 
     No se usa url_for(..., _external=True): las peticiones móviles llegan a
     Flask vía bridge_api con Host interno (ej. flask_app_1:5000), así que la
@@ -29,7 +38,8 @@ def _public_photo_url(photo_path):
     """
     if not photo_path:
         return None
-    static_path = url_for('static', filename=photo_path)
+    filename = photo_path.rsplit('/', 1)[-1]
+    static_path = url_for('api.ticket_photo', filename=filename)
     return current_app.config['PUBLIC_BASE_URL'].rstrip('/') + static_path
 
 
@@ -39,14 +49,14 @@ def require_api_key(f):
     def decorated_function(*args, **kwargs):
         hmac_sig = request.headers.get('X-HMAC-Signature')
         if hmac_sig:
-            secret = os.getenv('HMAC_SECRET_KEY', 'internal-hmac-secret-key')
+            secret = current_app.config['HMAC_SECRET_KEY']
             expected = hmac.new(secret.encode('utf-8'), request.get_data(), hashlib.sha256).hexdigest()
             if not hmac.compare_digest(hmac_sig, expected):
                 return jsonify({'error': 'Invalid HMAC signature'}), 401
         else:
             api_key = request.headers.get('X-API-Key')
-            expected_key = os.getenv('INTERNAL_API_KEY', 'internal-bridge-secret-key')
-            if api_key != expected_key:
+            expected_key = current_app.config['INTERNAL_API_KEY']
+            if not api_key or not hmac.compare_digest(api_key, expected_key):
                 return jsonify({'error': 'Unauthorized'}), 401
         return f(*args, **kwargs)
     return decorated_function
@@ -55,6 +65,11 @@ def require_api_key(f):
 @bp.get('/teams/<int:team_id>/members')
 @login_required
 def team_members(team_id: int):
+    """Usado por el selector de asignación de tickets (admin/agente). Sin
+    este chequeo, cualquier solicitante autenticado podía enumerar team_id
+    y obtener nombres/emails de todos los agentes de todos los equipos."""
+    if current_user.role not in ('admin', 'agent'):
+        return jsonify({'error': 'No autorizado'}), 403
     members = TeamMember.query.filter_by(team_id=team_id).all()
     data = [
         {
@@ -306,8 +321,18 @@ def webhook_ticket_created():
 @bp.get('/tickets/check-updates')
 @login_required
 def check_updates():
-    """Retorna el ID del último ticket creado para polling"""
-    last_ticket = Ticket.query.order_by(Ticket.id.desc()).first()
+    """Retorna el ID del último ticket creado para polling.
+
+    Para solicitante, se escopa a sus propios tickets: antes devolvía el
+    último ticket de TODO el sistema a cualquier usuario autenticado,
+    filtrando información de actividad que un solicitante no debería ver."""
+    query = Ticket.query
+    if current_user.role == 'requester':
+        requester = Requester.query.filter_by(email=current_user.email).first()
+        if not requester:
+            return jsonify({'last_ticket_id': 0})
+        query = query.filter_by(requester_id=requester.id)
+    last_ticket = query.order_by(Ticket.id.desc()).first()
     return jsonify({'last_ticket_id': last_ticket.id if last_ticket else 0})
 
 
@@ -346,32 +371,42 @@ def _blacklist_jwt(payload: dict) -> None:
         current_app.logger.warning('Redis no disponible, no se pudo invalidar el JWT')
 
 
+def _user_from_bearer_token():
+    """Valida el JWT del header Authorization y devuelve (user, payload) o
+    (None, error_response) si no es válido. Extraído de jwt_required para
+    reutilizarlo en endpoints que también aceptan sesión web (ej. fotos)."""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None, (jsonify({'error': 'Falta el token JWT (Authorization: Bearer <token>)'}), 401)
+    token = auth_header.split(' ', 1)[1]
+    try:
+        payload = pyjwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+    except pyjwt.ExpiredSignatureError:
+        return None, (jsonify({'error': 'Token expirado'}), 401)
+    except pyjwt.InvalidTokenError:
+        return None, (jsonify({'error': 'Token inválido'}), 401)
+
+    try:
+        if payload.get('jti') and get_redis().exists(_blacklist_key(payload['jti'])):
+            return None, (jsonify({'error': 'Token inválido'}), 401)
+    except _redis_module.RedisError:
+        current_app.logger.warning('Redis no disponible, se omitió el chequeo de blacklist de JWT')
+
+    user = User.query.get(payload.get('sub'))
+    if not user:
+        return None, (jsonify({'error': 'Usuario no encontrado'}), 401)
+    return user, payload
+
+
 def jwt_required(f):
     """Protege endpoints de la App Móvil con JSON Web Token (Bearer)."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
-            return jsonify({'error': 'Falta el token JWT (Authorization: Bearer <token>)'}), 401
-        token = auth_header.split(' ', 1)[1]
-        try:
-            payload = pyjwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
-        except pyjwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token expirado'}), 401
-        except pyjwt.InvalidTokenError:
-            return jsonify({'error': 'Token inválido'}), 401
-
-        try:
-            if payload.get('jti') and get_redis().exists(_blacklist_key(payload['jti'])):
-                return jsonify({'error': 'Token inválido'}), 401
-        except _redis_module.RedisError:
-            current_app.logger.warning('Redis no disponible, se omitió el chequeo de blacklist de JWT')
-
-        user = User.query.get(payload.get('sub'))
+        user, payload_or_error = _user_from_bearer_token()
         if not user:
-            return jsonify({'error': 'Usuario no encontrado'}), 401
+            return payload_or_error
         request.jwt_user = user
-        request.jwt_payload = payload
+        request.jwt_payload = payload_or_error
         return f(*args, **kwargs)
     return decorated
 
@@ -388,9 +423,23 @@ def mobile_login():
     if not email or not password:
         return jsonify({'error': 'email y password son requeridos'}), 400
 
+    if is_account_locked(email):
+        return jsonify({'error': 'Demasiados intentos fallidos. Intenta de nuevo en unos minutos.'}), 429
+
     user = User.query.filter_by(email=email).first()
-    if not user or not user.check_password(password):
+    if user:
+        password_ok = user.check_password(password)
+    else:
+        # Señuelo: iguala el tiempo de respuesta al caso "email existe,
+        # password incorrecta" para no filtrar por timing qué emails existen.
+        bcrypt.checkpw(password.encode('utf-8'), DUMMY_PASSWORD_HASH)
+        password_ok = False
+
+    if not user or not password_ok:
+        register_failed_login(email)
         return jsonify({'error': 'Credenciales inválidas'}), 401
+
+    clear_failed_login(email)
 
     if user.role != 'requester':
         return jsonify({'error': 'Esta app es solo para solicitantes. Usa la versión web para administrar o dar soporte.'}), 403
@@ -443,6 +492,7 @@ def mobile_register():
 
 @bp.get('/mobile/me')
 @jwt_required
+@rate_limit(limit=30, window=60)
 def mobile_me():
     user = request.jwt_user
     return jsonify({'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role})
@@ -451,10 +501,49 @@ def mobile_me():
 @bp.post('/mobile/logout')
 @csrf.exempt
 @jwt_required
+@rate_limit(limit=30, window=60)
 def mobile_logout():
     """Invalida el JWT actual (logout real, no solo borrarlo del teléfono)."""
     _blacklist_jwt(request.jwt_payload)
     return jsonify({'success': True})
+
+
+_PHOTO_FILENAME_RE = re.compile(r'^[a-f0-9]{32}\.(jpg|jpeg|png|webp)$')
+
+
+@bp.get('/uploads/tickets/<filename>')
+def ticket_photo(filename):
+    """Sirve la foto de un ticket solo al solicitante dueño o a un agente/admin.
+
+    Antes se servía directo desde /static/uploads/ (nginx -> Flask static),
+    alcanzable por cualquiera que tuviera o adivinara la URL, sin verificar
+    quién la pedía. Acepta sesión web (cookie, agentes/admin/solicitantes) o
+    JWT Bearer (App Móvil)."""
+    if not _PHOTO_FILENAME_RE.match(filename):
+        return jsonify({'error': 'No encontrado'}), 404
+
+    ticket = Ticket.query.filter_by(photo_path=f'uploads/tickets/{filename}').first()
+    if not ticket:
+        return jsonify({'error': 'No encontrado'}), 404
+
+    if request.headers.get('Authorization', '').startswith('Bearer '):
+        user, error = _user_from_bearer_token()
+        if not user:
+            return error
+    elif current_user.is_authenticated:
+        user = current_user
+    else:
+        return jsonify({'error': 'No autorizado'}), 401
+
+    if user.role == 'requester':
+        requester = Requester.query.filter_by(email=user.email).first()
+        if not requester or ticket.requester_id != requester.id:
+            return jsonify({'error': 'No autorizado'}), 403
+    # agente/admin: pueden ver la foto de cualquier ticket (mismo criterio
+    # que el resto de endpoints de tickets).
+
+    upload_dir = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'])
+    return send_from_directory(upload_dir, filename)
 
 
 def _save_ticket_photo(photo_b64: str) -> str:
@@ -479,6 +568,22 @@ def _save_ticket_photo(photo_b64: str) -> str:
 
     if len(raw) > MAX_PHOTO_BYTES:
         raise ValueError('La foto supera el tamaño máximo permitido (6 MB)')
+
+    # Validar que el contenido decodificado es realmente una imagen del tipo
+    # declarado (no basta con el prefijo "data:image/..." que envía el
+    # cliente: cualquiera puede declarar ese prefijo y subir un archivo
+    # arbitrario que luego se sirve públicamente desde /static/uploads/).
+    expected_format = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG', 'webp': 'WEBP'}[ext]
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(raw)) as img:
+            actual_format = img.format
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise ValueError('El archivo no es una imagen válida')
+
+    if actual_format != expected_format:
+        raise ValueError('El contenido de la imagen no coincide con el formato declarado')
 
     upload_dir = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)

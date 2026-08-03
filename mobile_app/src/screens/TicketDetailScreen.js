@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
 import { colors, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
 export default function TicketDetailScreen({ route }) {
   const { ticket } = route.params;
+  const { token } = useAuth();
   const status = STATUS_STYLE[ticket.status] || STATUS_STYLE.open;
   const priority = PRIORITY_STYLE[ticket.priority] || PRIORITY_STYLE.medium;
   const createdAt = ticket.created_at ? new Date(ticket.created_at) : null;
@@ -11,7 +13,10 @@ export default function TicketDetailScreen({ route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       {ticket.photo_url ? (
-        <Image source={{ uri: ticket.photo_url }} style={styles.photo} />
+        <Image
+          source={{ uri: ticket.photo_url, headers: { Authorization: `Bearer ${token}` } }}
+          style={styles.photo}
+        />
       ) : (
         <View style={[styles.photo, styles.photoPlaceholder]}>
           <Text style={{ color: colors.textMuted }}>Sin evidencia fotográfica</Text>

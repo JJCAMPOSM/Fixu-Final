@@ -36,8 +36,10 @@ http {
         # Las fotos de tickets se sirven a la App Móvil vía PUBLIC_BASE_URL en
         # HTTP plano (el certificado autofirmado no es de confianza para
         # React Native sin configuración extra) — se excluyen del redirect
-        # para no romper la carga de fotos en el teléfono.
-        location /static/uploads/ {
+        # para no romper la carga de fotos en el teléfono. Ruta autenticada
+        # (/api/uploads/tickets/, ver fixu/api/routes.py::ticket_photo), ya no
+        # el /static/uploads/ público sin control de acceso de antes.
+        location /api/uploads/tickets/ {
             proxy_pass http://flask_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -56,6 +58,14 @@ http {
 
         ssl_certificate     /etc/nginx/ssl/fixu.crt;
         ssl_certificate_key /etc/nginx/ssl/fixu.key;
+
+        # HSTS aplica a todo el server block 443 (una vez que el navegador ve
+        # esta cabecera por HTTPS, recuerda no volver a intentar HTTP en este
+        # host durante max-age). No se agrega a /grafana/ ni /admin ningún
+        # otro header de framing/CSP aquí para no chocar con los que Grafana
+        # ya envía por su cuenta; esos dos quedan cubiertos por Flask
+        # (fixu/__init__.py) y Laravel respectivamente.
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
         location ~ ^/admin(/|$) {
             proxy_pass http://laravel_backend;

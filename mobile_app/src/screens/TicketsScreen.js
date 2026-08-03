@@ -60,7 +60,10 @@ export default function TicketsScreen({ navigation }) {
           return (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TicketDetail', { ticket: item })} activeOpacity={0.8}>
               {item.photo_url ? (
-                <Image source={{ uri: item.photo_url }} style={styles.thumb} />
+                <Image
+                  source={{ uri: item.photo_url, headers: { Authorization: `Bearer ${token}` } }}
+                  style={styles.thumb}
+                />
               ) : (
                 <View style={[styles.thumb, styles.thumbPlaceholder]}>
                   <Text style={{ fontSize: 18 }}>📋</Text>

@@ -1,11 +1,20 @@
 import os
 from functools import wraps
 
+import bcrypt
 import redis
 from flask import current_app, jsonify, request
 from prometheus_client import Counter
 
 _redis_client = None
+
+# Hash bcrypt "señuelo": se compara contra él cuando un email de login no
+# existe, para que la respuesta tarde lo mismo que cuando sí existe y la
+# contraseña es incorrecta (evita enumerar cuentas por diferencia de tiempo).
+DUMMY_PASSWORD_HASH = bcrypt.hashpw(b'dummy-password-for-timing', bcrypt.gensalt())
+
+FAILED_LOGIN_LIMIT = 5
+FAILED_LOGIN_LOCKOUT_SECONDS = 15 * 60
 
 REQUESTS_TOTAL = Counter(
     'fixu_http_requests_total',
@@ -22,6 +31,40 @@ def get_redis():
         port = current_app.config.get('REDIS_PORT', int(os.environ.get('REDIS_PORT', 6379)))
         _redis_client = redis.Redis(host=host, port=port, db=0, decode_responses=True, socket_timeout=2)
     return _redis_client
+
+
+def _failed_login_key(email):
+    return f'failed_login:{email}'
+
+
+def is_account_locked(email):
+    """Bloqueo por cuenta (además del rate limit por IP) tras demasiados
+    intentos fallidos de login, para frenar fuerza bruta distribuida en
+    varias IPs contra una misma cuenta."""
+    try:
+        r = get_redis()
+        count = r.get(_failed_login_key(email))
+        return bool(count) and int(count) >= FAILED_LOGIN_LIMIT
+    except redis.RedisError:
+        return False
+
+
+def register_failed_login(email):
+    try:
+        r = get_redis()
+        key = _failed_login_key(email)
+        count = r.incr(key)
+        if count == 1:
+            r.expire(key, FAILED_LOGIN_LOCKOUT_SECONDS)
+    except redis.RedisError:
+        pass
+
+
+def clear_failed_login(email):
+    try:
+        get_redis().delete(_failed_login_key(email))
+    except redis.RedisError:
+        pass
 
 
 def rate_limit(limit=6, window=60):

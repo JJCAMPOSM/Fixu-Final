@@ -6,13 +6,22 @@ import hashlib
 from typing import Optional, Dict, Any
 
 
+def _require_env(name):
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(
+            f"La variable de entorno {name} es obligatoria y no está definida."
+        )
+    return value
+
+
 class BridgeAPIClient:
     """Cliente para comunicarse con el Bridge API (FastAPI)."""
-    
+
     def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
         self.base_url = base_url or os.getenv("BRIDGE_API_URL", "http://bridge_api:8000")
-        self.api_key = api_key or os.getenv("INTERNAL_API_KEY", "internal-bridge-secret-key")
-        self.hmac_secret = os.getenv("HMAC_SECRET_KEY", "internal-hmac-secret-key")
+        self.api_key = api_key or _require_env("INTERNAL_API_KEY")
+        self.hmac_secret = _require_env("HMAC_SECRET_KEY")
         self.headers = {
             "Content-Type": "application/json",
             "X-API-Key": self.api_key

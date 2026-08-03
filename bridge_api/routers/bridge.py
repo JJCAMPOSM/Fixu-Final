@@ -82,6 +82,23 @@ async def get_system_stats(
     return stats
 
 
+# Whitelist de prefijos permitidos en el proxy genérico: sin esto, cualquiera
+# con el INTERNAL_API_KEY/HMAC podía usar este endpoint para alcanzar
+# CUALQUIER ruta interna de Flask/Laravel (no solo las pensadas para
+# consultarse combinadas), incluyendo rutas administrativas no diseñadas
+# para exponerse vía proxy.
+_FLASK_PROXY_ALLOWED_PREFIXES = ("api/users", "api/tickets")
+_LARAVEL_PROXY_ALLOWED_PREFIXES = ("users", "tickets")
+
+
+def _check_proxy_path_allowed(path: str, allowed_prefixes: tuple) -> None:
+    if not any(path == p or path.startswith(p + "?") for p in allowed_prefixes):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Ruta no permitida en el proxy interno"
+        )
+
+
 @router.post("/flask/proxy/{path:path}")
 async def proxy_to_flask(
     path: str,
@@ -91,7 +108,8 @@ async def proxy_to_flask(
     settings: Settings = Depends(get_settings),
     authorized: bool = Depends(verify_api_key)
 ):
-    """Proxy de requests hacia Flask."""
+    """Proxy de requests hacia Flask (solo rutas de solo-lectura en whitelist)."""
+    _check_proxy_path_allowed(path, _FLASK_PROXY_ALLOWED_PREFIXES)
     bridge = BridgeService(http_client, settings)
     result = await bridge.proxy_to_flask(path, method, data)
     return result
@@ -106,7 +124,8 @@ async def proxy_to_laravel(
     settings: Settings = Depends(get_settings),
     authorized: bool = Depends(verify_api_key)
 ):
-    """Proxy de requests hacia Laravel."""
+    """Proxy de requests hacia Laravel (solo rutas de solo-lectura en whitelist)."""
+    _check_proxy_path_allowed(path, _LARAVEL_PROXY_ALLOWED_PREFIXES)
     bridge = BridgeService(http_client, settings)
     result = await bridge.proxy_to_laravel(path, method, data)
     return result

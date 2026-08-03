@@ -75,6 +75,30 @@ def create_app():
             response.headers['Pragma'] = 'no-cache'
         return response
 
+    # Defensa en profundidad: aunque hoy no hay XSS conocido (autoescape de
+    # Jinja2 activo en todo el proyecto, sin usos de |safe), estas cabeceras
+    # limitan el impacto de un futuro descuido y de clickjacking/MIME-sniffing.
+    @app.after_request
+    def security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # 'unsafe-inline' en script/style porque los templates usan bloques
+        # <script>/estilos inline extensivamente (no hay XSS conocido dado el
+        # autoescape de Jinja2, así que el trade-off es aceptable); cdn.jsdelivr.net
+        # porque Bootstrap/Bootstrap Icons se cargan desde ahí en todos los layouts.
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://cdn.jsdelivr.net; "
+            "img-src 'self' data:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'"
+        )
+        return response
+
     with app.app_context():
         if os.environ.get('FIXU_BOOTSTRAP_DB', '0') == '1':
             try:

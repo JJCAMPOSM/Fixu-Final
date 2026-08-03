@@ -1,8 +1,18 @@
 import os
 
 
+def _require_env(name):
+    value = os.environ.get(name)
+    if not value:
+        raise RuntimeError(
+            f"La variable de entorno {name} es obligatoria y no está definida. "
+            f"Copia .env.example a .env y define un valor único y aleatorio."
+        )
+    return value
+
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-change-me')
+    SECRET_KEY = _require_env('SECRET_KEY')
 
     # Cookie de sesión: no accesible por JS, no enviada por HTTP plano
     # (excepto en desarrollo local, donde no hay HTTPS disponible).
@@ -22,9 +32,18 @@ class Config:
     # URL del panel de administración Laravel
     LARAVEL_ADMIN_URL = os.environ.get('LARAVEL_ADMIN_URL', 'http://localhost:8000')
 
-    # JWT para la App Móvil
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+    # JWT para la App Móvil (secreto independiente de SECRET_KEY: si uno se
+    # filtra, el otro sigue protegido)
+    JWT_SECRET_KEY = _require_env('JWT_SECRET_KEY')
     JWT_EXP_HOURS = int(os.environ.get('JWT_EXP_HOURS', '12'))
+
+    # Compartidos con bridge_api/laravel_admin para firmar/validar llamadas
+    # internas (HMAC de sync, API key de bridge, handoff de /admin). Sin
+    # default: si falta cualquiera de los tres servicios firmaría/validaría
+    # con secretos distintos y fallaría de forma ruidosa en vez de aceptar
+    # silenciosamente un secreto público conocido.
+    HMAC_SECRET_KEY = _require_env('HMAC_SECRET_KEY')
+    INTERNAL_API_KEY = _require_env('INTERNAL_API_KEY')
 
     # Redis para Rate Limiting global
     REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')

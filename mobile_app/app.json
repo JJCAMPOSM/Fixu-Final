@@ -15,7 +15,6 @@
       "package": "com.fixu.campo",
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
       ]

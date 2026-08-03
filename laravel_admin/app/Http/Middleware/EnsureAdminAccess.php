@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -39,7 +40,12 @@ class EnsureAdminAccess
         }
         [$payloadB64, $signature] = $parts;
 
-        $secret = env('HMAC_SECRET_KEY', 'internal-hmac-secret-key');
+        $secret = env('HMAC_SECRET_KEY');
+        if (!$secret) {
+            // Sin secreto compartido no hay forma de validar el handoff:
+            // fallar cerrado en vez de aceptar un valor público conocido.
+            return false;
+        }
         $expected = hash_hmac('sha256', $payloadB64, $secret);
         if (!hash_equals($expected, $signature)) {
             return false;
@@ -60,6 +66,19 @@ class EnsureAdminAccess
         if (!isset($payload['exp']) || time() > (int) $payload['exp']) {
             return false;
         }
+
+        // Nonce de un solo uso: si ya se consumió (ej. la URL quedó en logs
+        // de nginx/proxy y alguien más la reutiliza dentro de la ventana de
+        // 60s), rechazar el segundo intento.
+        $nonce = $payload['nonce'] ?? null;
+        if (!$nonce) {
+            return false;
+        }
+        $cacheKey = 'admin_handoff_nonce:' . $nonce;
+        if (Cache::has($cacheKey)) {
+            return false;
+        }
+        Cache::put($cacheKey, true, 65);
 
         return true;
     }

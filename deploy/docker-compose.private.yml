@@ -19,7 +19,7 @@ services:
     environment:
       POSTGRES_DB: fixu
       POSTGRES_USER: fixu_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-fixu_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatoria, definila en deploy/.env}
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
@@ -38,12 +38,12 @@ services:
     restart: always
     depends_on: [db, redis]
     environment: &flask_env
-      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:?DB_PASSWORD es obligatoria, definila en deploy/.env}@db:5432/fixu
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY es obligatoria, definila en deploy/.env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY es obligatoria, definila en deploy/.env}
       FIXU_BOOTSTRAP_DB: "1"
-      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:?HMAC_SECRET_KEY es obligatoria, definila en deploy/.env}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY es obligatoria, definila en deploy/.env}
       LARAVEL_ADMIN_URL: http://laravel_admin:80
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://167.172.144.30}
       REDIS_HOST: redis
@@ -74,8 +74,8 @@ services:
       DB_PORT: 5432
       DB_DATABASE: fixu
       DB_USERNAME: fixu_user
-      DB_PASSWORD: ${DB_PASSWORD:-fixu_password}
-      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatoria, definila en deploy/.env}
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:?HMAC_SECRET_KEY es obligatoria, definila en deploy/.env}
     ports:
       - "${PRIVATE_IP:-10.116.0.3}:8000:80"
 
@@ -88,9 +88,9 @@ services:
     environment: &bridge_env
       FLASK_APP_URL: http://flask_app_1:5000
       LARAVEL_ADMIN_URL: http://laravel_admin:80
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-internal-bridge-secret-key}
-      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:-fixu_password}@db:5432/fixu
-      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:-internal-hmac-secret-key}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY es obligatoria, definila en deploy/.env}
+      DATABASE_URL: postgresql://fixu_user:${DB_PASSWORD:?DB_PASSWORD es obligatoria, definila en deploy/.env}@db:5432/fixu
+      HMAC_SECRET_KEY: ${HMAC_SECRET_KEY:?HMAC_SECRET_KEY es obligatoria, definila en deploy/.env}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
     ports:
