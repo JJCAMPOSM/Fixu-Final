@@ -344,7 +344,9 @@ MAX_PHOTO_BYTES = 6 * 1024 * 1024  # 6 MB
 
 def _issue_jwt(user: User) -> str:
     payload = {
-        'sub': user.id,
+        # PyJWT (desde 2.10) exige que "sub" sea un string por RFC 7519;
+        # se castea de vuelta a int al leerlo en _user_from_bearer_token.
+        'sub': str(user.id),
         'email': user.email,
         'role': user.role,
         'jti': uuid.uuid4().hex,
@@ -392,7 +394,11 @@ def _user_from_bearer_token():
     except _redis_module.RedisError:
         current_app.logger.warning('Redis no disponible, se omitió el chequeo de blacklist de JWT')
 
-    user = User.query.get(payload.get('sub'))
+    try:
+        user_id = int(payload.get('sub'))
+    except (TypeError, ValueError):
+        return None, (jsonify({'error': 'Token inválido'}), 401)
+    user = User.query.get(user_id)
     if not user:
         return None, (jsonify({'error': 'Usuario no encontrado'}), 401)
     return user, payload
