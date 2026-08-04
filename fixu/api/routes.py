@@ -378,14 +378,9 @@ def _blacklist_jwt(payload: dict) -> None:
         current_app.logger.warning('Redis no disponible, no se pudo invalidar el JWT')
 
 
-def _user_from_bearer_token():
-    """Valida el JWT del header Authorization y devuelve (user, payload) o
-    (None, error_response) si no es válido. Extraído de jwt_required para
-    reutilizarlo en endpoints que también aceptan sesión web (ej. fotos)."""
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return None, (jsonify({'error': 'Falta el token JWT (Authorization: Bearer <token>)'}), 401)
-    token = auth_header.split(' ', 1)[1]
+def _decode_bearer_token(token):
+    """Valida un JWT ya extraído (de header Authorization o, para fotos, de
+    query param) y devuelve (user, payload) o (None, error_response)."""
     try:
         payload = pyjwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
     except pyjwt.ExpiredSignatureError:
@@ -407,6 +402,16 @@ def _user_from_bearer_token():
     if not user:
         return None, (jsonify({'error': 'Usuario no encontrado'}), 401)
     return user, payload
+
+
+def _user_from_bearer_token():
+    """Valida el JWT del header Authorization y devuelve (user, payload) o
+    (None, error_response) si no es válido. Extraído de jwt_required para
+    reutilizarlo en endpoints que también aceptan sesión web (ej. fotos)."""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None, (jsonify({'error': 'Falta el token JWT (Authorization: Bearer <token>)'}), 401)
+    return _decode_bearer_token(auth_header.split(' ', 1)[1])
 
 
 def jwt_required(f):
@@ -544,6 +549,14 @@ def ticket_photo(filename):
         user, error = _user_from_bearer_token()
         if not user:
             return error
+    elif request.args.get('token'):
+        # El componente <Image> de React Native no manda headers custom de
+        # forma confiable en todas las plataformas (limitación conocida,
+        # sobre todo en iOS), así que la App Móvil puede pasar el JWT como
+        # query param solo en esta ruta de fotos (no en el resto de la API).
+        user, error = _decode_bearer_token(request.args['token'])
+        if not user:
+            return error
     elif current_user.is_authenticated:
         user = current_user
     else:
@@ -630,7 +643,10 @@ def mobile_create_ticket():
 
     title = (data.get('title') or '').strip()
     body = (data.get('body') or '').strip()
-    priority = data.get('priority', 'medium')
+    # La prioridad no la elige el solicitante (ni desde la web ni desde la
+    # App Móvil): se ignora cualquier valor recibido y queda en "media";
+    # solo el admin puede cambiarla después.
+    priority = 'medium'
     building = (data.get('building') or '').strip()
     classroom = (data.get('classroom') or '').strip()
     equipment_type = (data.get('equipment_type') or '').strip()
@@ -639,8 +655,6 @@ def mobile_create_ticket():
         return jsonify({'error': 'title es requerido (máx. 200 caracteres)'}), 400
     if not body:
         return jsonify({'error': 'body (descripción) es requerido'}), 400
-    if priority not in ('low', 'medium', 'high'):
-        return jsonify({'error': 'priority debe ser low, medium o high'}), 400
     if building not in BUILDINGS:
         return jsonify({'error': 'building es requerido y debe ser uno de los edificios disponibles'}), 400
     if classroom not in CLASSROOMS:
@@ -738,6 +752,7 @@ def mobile_list_tickets():
         'photo_url': _public_photo_url(t.photo_path),
         'resolution_photo_url': _public_photo_url(t.resolution_photo_path),
         'created_at': t.created_at.isoformat() + 'Z',
+        'resolved_at': (t.resolved_at.isoformat() + 'Z') if t.resolved_at else None,
         'assigned': t.assignee_team_member_id is not None,
         'has_feedback': t.id in feedback_ticket_ids,
     } for t in tickets])

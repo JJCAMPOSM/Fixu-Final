@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -11,7 +12,8 @@ import MainTabs from './src/navigation/MainTabs';
 import NewTicketScreen from './src/screens/NewTicketScreen';
 import TicketDetailScreen from './src/screens/TicketDetailScreen';
 import EvaluateAttentionScreen from './src/screens/EvaluateAttentionScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
+import AboutScreen from './src/screens/AboutScreen';
+import TermsScreen from './src/screens/TermsScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import MaintenanceCalendarScreen from './src/screens/MaintenanceCalendarScreen';
 import ChecklistScreen from './src/screens/ChecklistScreen';
@@ -42,7 +44,8 @@ function AppStack() {
       <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ title: 'Nuevo reporte' }} />
       <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: 'Detalle del reporte' }} />
       <Stack.Screen name="EvaluateAttention" component={EvaluateAttentionScreen} options={{ title: 'Evaluar atención' }} />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Configuración' }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ title: 'Acerca de Fixu' }} />
+      <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Términos y condiciones' }} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'Cambiar contraseña' }} />
       <Stack.Screen name="MaintenanceCalendar" component={MaintenanceCalendarScreen} options={{ title: 'Calendario de mantenimientos' }} />
       <Stack.Screen name="Checklist" component={ChecklistScreen} options={{ title: 'Checklist' }} />
@@ -70,9 +73,11 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.pageBg} />
-      <RootNavigator />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.pageBg} />
+        <RootNavigator />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

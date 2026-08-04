@@ -18,6 +18,15 @@ async function request(path, { method = 'GET', token, body } = {}) {
   return data;
 }
 
+// <Image> de React Native no manda headers custom de forma confiable en
+// todas las plataformas, así que las fotos de tickets se autentican con el
+// JWT como query param en vez de Authorization header (ver ticket_photo en
+// fixu/api/routes.py).
+export const withAuthToken = (url, token) => {
+  if (!url) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+};
+
 export const login = (email, password) =>
   request('/login', { method: 'POST', body: { email, password } });
 
@@ -30,8 +39,8 @@ export const logout = (token) => request('/logout', { method: 'POST', token });
 
 export const listTickets = (token) => request('/tickets', { token });
 
-export const createTicket = (token, { title, body, priority, building, classroom, equipment_type, photo_base64 }) =>
-  request('/tickets', { method: 'POST', token, body: { title, body, priority, building, classroom, equipment_type, photo_base64 } });
+export const createTicket = (token, { title, body, building, classroom, equipment_type, photo_base64 }) =>
+  request('/tickets', { method: 'POST', token, body: { title, body, building, classroom, equipment_type, photo_base64 } });
 
 export const uploadResolutionPhoto = (token, ticketId, photo_base64) =>
   request(`/tickets/${ticketId}/resolution-photo`, { method: 'POST', token, body: { photo_base64 } });

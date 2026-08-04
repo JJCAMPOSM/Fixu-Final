@@ -26,7 +26,9 @@ export default function EvaluateAttentionScreen({ route, navigation }) {
     setLoading(true);
     try {
       await submitFeedback(token, ticket.id, rating, comment.trim());
-      navigation.navigate('Tickets');
+      navigation.navigate('TicketDetail', {
+        ticket: { ...ticket, has_feedback: true, rating, comentario: comment.trim() || null },
+      });
     } catch (e) {
       setError(e.message);
     } finally {

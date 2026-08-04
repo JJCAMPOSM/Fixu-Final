@@ -116,6 +116,35 @@ async def mobile_upload_resolution_photo(
     )
 
 
+@router.post("/tickets/{ticket_id}/cancel", dependencies=[Depends(rate_limit_dependency(limit=20, window=60))])
+async def mobile_cancel_ticket(
+    ticket_id: int,
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Cancela un ticket (solicitante). Igual que resolution-photo, esta ruta
+    faltaba en el bridge pese a que Flask ya soporta el endpoint."""
+    return await _forward_to_flask(
+        http_client, settings, "POST", f"tickets/{ticket_id}/cancel", authorization, {},
+    )
+
+
+@router.post("/tickets/{ticket_id}/status", dependencies=[Depends(rate_limit_dependency(limit=20, window=60))])
+async def mobile_update_ticket_status(
+    ticket_id: int,
+    payload: dict = Body(...),
+    authorization: Optional[str] = Header(None),
+    http_client: httpx.AsyncClient = Depends(get_http_client),
+    settings: Settings = Depends(get_settings),
+):
+    """Cambia el estado de un ticket (agente). Misma causa que arriba: ruta
+    faltante en el bridge."""
+    return await _forward_to_flask(
+        http_client, settings, "POST", f"tickets/{ticket_id}/status", authorization, payload,
+    )
+
+
 @router.post("/tickets/{ticket_id}/feedback", dependencies=[Depends(rate_limit_dependency(limit=20, window=60))])
 async def mobile_submit_feedback(
     ticket_id: int,

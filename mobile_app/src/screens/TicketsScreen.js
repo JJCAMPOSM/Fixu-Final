@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { listTickets } from '../api';
+import { listTickets, withAuthToken } from '../api';
 import { colors, typography, radius, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import Badge from '../components/Badge';
 import { useAuth } from '../context/AuthContext';
@@ -33,22 +34,10 @@ export default function TicketsScreen({ navigation }) {
   const activeCount = tickets.filter((t) => !['resolved', 'cancelled'].includes(t.status)).length;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[typography.pageTitle, { fontSize: 20 }]}>Hola, {user?.name?.split(' ')[0] || 'Agente'} 👋</Text>
-            <Text style={styles.headerSubtitle}>{activeCount} reporte(s) activos</Text>
-          </View>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 14 }}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-              <Ionicons name="person-circle-outline" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Text style={[typography.pageTitle, { fontSize: 20 }]}>Hola, {user?.name?.split(' ')[0] || 'Agente'}</Text>
+        <Text style={styles.headerSubtitle}>{activeCount} reporte(s) activos</Text>
       </View>
 
       {!!error && <Text style={styles.error}>{error}</Text>}
@@ -70,10 +59,10 @@ export default function TicketsScreen({ navigation }) {
           return (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TicketDetail', { ticket: item })} activeOpacity={0.8}>
               {item.photo_url ? (
-                <Image source={{ uri: item.photo_url, headers: { Authorization: `Bearer ${token}` } }} style={styles.thumb} />
+                <Image source={{ uri: withAuthToken(item.photo_url, token) }} style={styles.thumb} />
               ) : (
                 <View style={[styles.thumb, styles.thumbPlaceholder]}>
-                  <Text style={{ fontSize: 18 }}>📋</Text>
+                  <Ionicons name="document-text-outline" size={22} color={colors.textMuted} />
                 </View>
               )}
               <View style={{ flex: 1 }}>
@@ -99,15 +88,13 @@ export default function TicketsScreen({ navigation }) {
           <Text style={styles.fabText}>+ Nuevo reporte</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.pageBg },
   header: { padding: 16, paddingTop: 52 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerIcons: { flexDirection: 'row', alignItems: 'center' },
   headerSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
   error: { color: colors.danger, paddingHorizontal: 16 },
   empty: { color: colors.textMuted, textAlign: 'center', marginTop: 40 },

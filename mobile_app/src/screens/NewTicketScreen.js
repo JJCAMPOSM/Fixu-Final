@@ -4,20 +4,18 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import { createTicket } from '../api';
-import { colors, radius, PRIORITY_STYLE } from '../theme';
+import { colors, radius } from '../theme';
 import { BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES } from '../constants';
 import Button from '../components/Button';
 import SelectField from '../components/SelectField';
 import { useAuth } from '../context/AuthContext';
 
-const PRIORITIES = ['low', 'medium', 'high'];
-
 export default function NewTicketScreen({ navigation }) {
   const { token } = useAuth();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [priority, setPriority] = useState('medium');
   const [building, setBuilding] = useState(null);
   const [classroom, setClassroom] = useState(null);
   const [equipmentType, setEquipmentType] = useState(null);
@@ -79,7 +77,6 @@ export default function NewTicketScreen({ navigation }) {
       await createTicket(token, {
         title: title.trim(),
         body: body.trim(),
-        priority,
         building,
         classroom,
         equipment_type: equipmentType,
@@ -139,23 +136,6 @@ export default function NewTicketScreen({ navigation }) {
         onChange={setEquipmentType}
       />
 
-      <Text style={styles.label}>Prioridad</Text>
-      <View style={styles.row}>
-        {PRIORITIES.map((p) => {
-          const active = priority === p;
-          const st = PRIORITY_STYLE[p];
-          return (
-            <TouchableOpacity
-              key={p}
-              style={[styles.chip, active && { backgroundColor: st.fg, borderColor: st.fg }]}
-              onPress={() => setPriority(p)}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{st.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
       <Text style={styles.label}>Evidencia fotográfica (cámara en vivo)</Text>
       {photo?.uri ? (
         <Image source={{ uri: photo.uri }} style={styles.preview} />
@@ -175,7 +155,8 @@ export default function NewTicketScreen({ navigation }) {
       {!!locationError && <Text style={styles.gpsError}>{locationError}</Text>}
 
       <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
-        <Text style={styles.cameraButtonText}>📷 {photo ? 'Volver a tomar foto' : 'Tomar foto de la falla'}</Text>
+        <Ionicons name="camera-outline" size={18} color={colors.white} style={{ marginRight: 8 }} />
+        <Text style={styles.cameraButtonText}>{photo ? 'Volver a tomar foto' : 'Tomar foto de la falla'}</Text>
       </TouchableOpacity>
       <Text style={styles.hint}>
         Solo se acepta cámara en vivo, para garantizar que la evidencia se capturó en el sitio.
@@ -201,16 +182,15 @@ const styles = StyleSheet.create({
     fontSize: 15, borderWidth: 1, borderColor: colors.border,
   },
   textarea: { height: 100, textAlignVertical: 'top' },
-  row: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  chip: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  chipTextActive: { color: colors.white },
   preview: { width: '100%', height: 180, borderRadius: radius.sm, marginBottom: 6, backgroundColor: colors.white },
   previewPlaceholder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
   gpsBadge: { backgroundColor: colors.infoBg, borderRadius: radius.sm, padding: 8, marginTop: 4 },
   gpsText: { color: colors.info, fontSize: 12, fontWeight: '600' },
   gpsError: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
-  cameraButton: { backgroundColor: colors.accent, borderRadius: radius.sm, padding: 12, marginTop: 10 },
+  cameraButton: {
+    backgroundColor: colors.accent, borderRadius: radius.sm, padding: 12, marginTop: 10,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+  },
   cameraButtonText: { color: colors.white, textAlign: 'center', fontWeight: '600', fontSize: 14 },
   hint: { color: colors.textMuted, fontSize: 11, marginTop: 6, textAlign: 'center' },
   error: { color: colors.danger, marginTop: 14 },

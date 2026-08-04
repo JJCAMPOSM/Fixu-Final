@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, STATUS_STYLE, PRIORITY_STYLE } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { uploadResolutionPhoto, cancelTicket, updateTicketStatus } from '../api';
+import { uploadResolutionPhoto, cancelTicket, updateTicketStatus, withAuthToken } from '../api';
 import Badge from '../components/Badge';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -29,14 +30,18 @@ function TicketProgress({ ticket }) {
   const stepDone = [true, assigned, inRepair, done, evaluated];
 
   return (
-    <View style={styles.progressRow}>
+    <View style={styles.progressList}>
       {PROGRESS_STEPS.map((label, i) => (
-        <View key={label} style={styles.progressBadge}>
-          <Badge
-            label={`${i + 1}. ${label}`}
-            bg={stepDone[i] ? colors.successBg : colors.neutralBg}
-            fg={stepDone[i] ? colors.success : colors.textMuted}
-          />
+        <View key={label} style={styles.progressStep}>
+          <View style={styles.progressMarkerCol}>
+            <View style={[styles.progressDot, stepDone[i] && styles.progressDotDone]}>
+              {stepDone[i] && <Text style={styles.progressDotCheck}>✓</Text>}
+            </View>
+            {i < PROGRESS_STEPS.length - 1 && (
+              <View style={[styles.progressLine, stepDone[i + 1] && styles.progressLineDone]} />
+            )}
+          </View>
+          <Text style={[styles.progressLabel, stepDone[i] && styles.progressLabelDone]}>{label}</Text>
         </View>
       ))}
     </View>
@@ -113,7 +118,7 @@ export default function TicketDetailScreen({ route, navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       {ticket.photo_url ? (
         <Image
-          source={{ uri: ticket.photo_url, headers: { Authorization: `Bearer ${token}` } }}
+          source={{ uri: withAuthToken(ticket.photo_url, token) }}
           style={styles.photo}
         />
       ) : (
@@ -126,7 +131,7 @@ export default function TicketDetailScreen({ route, navigation }) {
         <Card style={{ marginBottom: 12 }}>
           <Text style={styles.cardLabel}>Foto de resolución</Text>
           <Image
-            source={{ uri: ticket.resolution_photo_url, headers: { Authorization: `Bearer ${token}` } }}
+            source={{ uri: withAuthToken(ticket.resolution_photo_url, token) }}
             style={[styles.photo, { marginTop: 8, marginBottom: 0 }]}
           />
         </Card>
@@ -162,13 +167,6 @@ export default function TicketDetailScreen({ route, navigation }) {
               </TouchableOpacity>
             ))}
           </View>
-        </Card>
-      )}
-
-      {canCancel && (
-        <Card style={{ marginBottom: 12 }}>
-          {!!statusError && <Text style={{ color: colors.danger, marginBottom: 8 }}>{statusError}</Text>}
-          <Button label="Cancelar ticket" onPress={handleCancel} loading={cancelling} danger />
         </Card>
       )}
 
@@ -210,10 +208,35 @@ export default function TicketDetailScreen({ route, navigation }) {
         </Card>
       )}
 
+      {user?.role === 'requester' && ticket.has_feedback && !!ticket.rating && (
+        <Card style={{ marginBottom: 12 }}>
+          <Text style={styles.cardLabel}>Tu evaluación</Text>
+          <View style={{ flexDirection: 'row', marginTop: 4, marginBottom: ticket.comentario ? 8 : 0 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Ionicons
+                key={n}
+                name={n <= ticket.rating ? 'star' : 'star-outline'}
+                size={20}
+                color={n <= ticket.rating ? colors.warning : colors.textMuted}
+                style={{ marginRight: 2 }}
+              />
+            ))}
+          </View>
+          {!!ticket.comentario && <Text style={styles.cardBody}>{ticket.comentario}</Text>}
+        </Card>
+      )}
+
       {canEvaluate && (
-        <TouchableOpacity style={styles.evaluateLink} onPress={() => navigation.navigate('EvaluateAttention', { ticket })}>
-          <Text style={styles.evaluateLinkText}>⭐ Evaluar la atención recibida</Text>
-        </TouchableOpacity>
+        <View style={{ marginBottom: 12 }}>
+          <Button label="⭐ Evaluar la atención recibida" onPress={() => navigation.navigate('EvaluateAttention', { ticket })} />
+        </View>
+      )}
+
+      {canCancel && (
+        <Card style={{ marginTop: 8 }}>
+          {!!statusError && <Text style={{ color: colors.danger, marginBottom: 8 }}>{statusError}</Text>}
+          <Button label="Cancelar ticket" onPress={handleCancel} loading={cancelling} danger />
+        </Card>
       )}
     </ScrollView>
   );
@@ -228,10 +251,19 @@ const styles = StyleSheet.create({
   date: { fontSize: 12, color: colors.textMuted, marginTop: 4, marginBottom: 16 },
   cardLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 4, fontWeight: '600' },
   cardBody: { fontSize: 15, color: colors.textPrimary, lineHeight: 21 },
-  evaluateLink: { padding: 14, alignItems: 'center' },
-  evaluateLinkText: { color: colors.accent, fontWeight: '700', fontSize: 14 },
-  progressRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  progressBadge: { marginBottom: 2 },
+  progressList: { marginTop: 6 },
+  progressStep: { flexDirection: 'row', alignItems: 'flex-start' },
+  progressMarkerCol: { alignItems: 'center', width: 24 },
+  progressDot: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border,
+    backgroundColor: colors.white, justifyContent: 'center', alignItems: 'center',
+  },
+  progressDotDone: { backgroundColor: colors.success, borderColor: colors.success },
+  progressDotCheck: { color: colors.white, fontSize: 11, fontWeight: '700' },
+  progressLine: { width: 2, flex: 1, minHeight: 20, backgroundColor: colors.border },
+  progressLineDone: { backgroundColor: colors.success },
+  progressLabel: { fontSize: 14, color: colors.textMuted, marginLeft: 10, paddingBottom: 18 },
+  progressLabelDone: { color: colors.textPrimary, fontWeight: '600' },
   statusOption: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
     paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.white,
