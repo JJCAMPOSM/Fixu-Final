@@ -27,7 +27,7 @@
       }
     },
     "extra": {
-      "apiUrl": "http://localhost:8080"
+      "apiUrl": "http://167.172.144.30:8080"
     },
     "plugins": [
       "expo-secure-store"

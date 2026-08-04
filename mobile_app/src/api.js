@@ -1,4 +1,4 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://167.172.144.30:8080';
 
 async function request(path, { method = 'GET', token, body } = {}) {
   const headers = { 'Content-Type': 'application/json' };
