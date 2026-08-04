@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { changePassword } from '../api';
-import { colors } from '../theme';
+import { colors, typography } from '../theme';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
-import FormField from '../components/FormField';
+import PasswordInput from '../components/PasswordInput';
 import Button from '../components/Button';
+
+const PASSWORD_RULES = [
+  { key: 'length', label: 'Al menos 8 caracteres', test: (pw) => pw.length >= 8 },
+  { key: 'letter', label: 'Al menos 1 letra', test: (pw) => /[a-zA-Z]/.test(pw) },
+  { key: 'number', label: 'Al menos 1 número', test: (pw) => /[0-9]/.test(pw) },
+];
 
 export default function ChangePasswordScreen({ navigation }) {
   const { token } = useAuth();
@@ -22,8 +28,8 @@ export default function ChangePasswordScreen({ navigation }) {
       setError('Ingresa tu contraseña actual.');
       return;
     }
-    if (newPassword.length < 8) {
-      setError('La nueva contraseña debe tener al menos 8 caracteres.');
+    if (!PASSWORD_RULES.every((rule) => rule.test(newPassword))) {
+      setError('La nueva contraseña no cumple con los requisitos.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -49,9 +55,30 @@ export default function ChangePasswordScreen({ navigation }) {
   return (
     <Screen>
       <Card>
-        <FormField label="Contraseña actual" placeholder="••••••••" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry />
-        <FormField label="Nueva contraseña" placeholder="Mínimo 8 caracteres" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-        <FormField label="Confirmar nueva contraseña" placeholder="Repite la nueva contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry />
+        <Text style={typography.label}>Contraseña actual</Text>
+        <View style={{ marginTop: 4, marginBottom: 14 }}>
+          <PasswordInput placeholder="••••••••" value={currentPassword} onChangeText={setCurrentPassword} />
+        </View>
+
+        <Text style={typography.label}>Nueva contraseña</Text>
+        <View style={{ marginTop: 4 }}>
+          <PasswordInput placeholder="Mínimo 8 caracteres" value={newPassword} onChangeText={setNewPassword} />
+        </View>
+        <View style={styles.rulesList}>
+          {PASSWORD_RULES.map((rule) => {
+            const met = rule.test(newPassword);
+            return (
+              <Text key={rule.key} style={[styles.ruleItem, met && styles.ruleItemMet]}>
+                {met ? '✓' : '•'} {rule.label}
+              </Text>
+            );
+          })}
+        </View>
+
+        <Text style={[typography.label, { marginTop: 14 }]}>Confirmar nueva contraseña</Text>
+        <View style={{ marginTop: 4, marginBottom: 14 }}>
+          <PasswordInput placeholder="Repite la nueva contraseña" value={confirmPassword} onChangeText={setConfirmPassword} />
+        </View>
 
         {!!success && <Text style={styles.success}>{success}</Text>}
         {!!error && <Text style={styles.error}>{error}</Text>}
@@ -63,6 +90,9 @@ export default function ChangePasswordScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  success: { color: colors.success, marginBottom: 10 },
-  error: { color: colors.danger, marginBottom: 10 },
+  rulesList: { marginTop: 8 },
+  ruleItem: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+  ruleItemMet: { color: colors.success },
+  success: { color: colors.success, marginBottom: 10, marginTop: 10 },
+  error: { color: colors.danger, marginBottom: 10, marginTop: 10 },
 });

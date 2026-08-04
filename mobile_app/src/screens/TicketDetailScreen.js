@@ -228,7 +228,10 @@ export default function TicketDetailScreen({ route, navigation }) {
 
       {canEvaluate && (
         <View style={{ marginBottom: 12 }}>
-          <Button label="⭐ Evaluar la atención recibida" onPress={() => navigation.navigate('EvaluateAttention', { ticket })} />
+          <Button
+            label="⭐ Evaluar la atención recibida"
+            onPress={() => navigation.navigate('EvaluateAttention', { ticket, onSubmitted: setTicket })}
+          />
         </View>
       )}
 

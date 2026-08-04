@@ -11,7 +11,7 @@ from ..models import Ticket, Requester, Team, TeamMember, Comment, TicketEvent, 
 from ..services.bridge_client import get_bridge_client
 from ..ticket_catalog import (
     BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES,
-    STATUS_ADMIN_CHOICES, STATUS_AGENT_CHOICES, CANCELABLE_BY_REQUESTER,
+    STATUS_ADMIN_CHOICES, STATUS_AGENT_CHOICES, STATUS_LABELS, CANCELABLE_BY_REQUESTER,
 )
 
 
@@ -289,7 +289,10 @@ def edit(ticket_id):
             new_status = form.status.data
             _mark_resolved_if_needed(ticket, new_status)
             ticket.status = new_status
-            db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
+            db.session.add(TicketEvent(
+                ticket_id=ticket.id, user_id=current_user.id,
+                body=f'Estado actualizado a "{STATUS_LABELS[new_status]}"',
+            ))
             db.session.commit()
             flash('Ticket actualizado.', 'success')
             return redirect(url_for('tickets.show', ticket_id=ticket.id))
@@ -301,6 +304,7 @@ def edit(ticket_id):
         assignee_value = form.assignee_team_member_id.data or 0
         team_value = form.team_id.data or 0
         new_assignee = assignee_value if assignee_value != 0 else None
+        old_status = ticket.status
 
         # Al asignar un agente a un ticket que seguía "pendiente", el estado
         # avanza automáticamente a "asignado".
@@ -315,7 +319,12 @@ def edit(ticket_id):
         ticket.assignee_team_member_id = new_assignee
         ticket.status = new_status
         ticket.priority = form.priority.data
-        db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
+
+        if new_status != old_status:
+            event_body = f'Estado actualizado a "{STATUS_LABELS[new_status]}"'
+        else:
+            event_body = 'Ticket actualizado'
+        db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body=event_body))
         db.session.commit()
         flash('Ticket actualizado.', 'success')
         return redirect(url_for('tickets.show', ticket_id=ticket.id))

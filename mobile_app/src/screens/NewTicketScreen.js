@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -27,8 +27,9 @@ export default function NewTicketScreen({ navigation }) {
 
   const validate = () => {
     if (title.trim().length < 3) return 'El título debe tener al menos 3 caracteres.';
-    if (title.length > 200) return 'El título es demasiado largo (máx. 200).';
+    if (title.length > 50) return 'El título es demasiado largo (máx. 50 caracteres).';
     if (body.trim().length < 10) return 'Describe la falla con al menos 10 caracteres.';
+    if (body.length > 150) return 'La descripción es demasiado larga (máx. 150 caracteres).';
     if (!building) return 'Selecciona el edificio.';
     if (!classroom) return 'Selecciona el aula.';
     if (!equipmentType) return 'Selecciona el tipo de equipo.';
@@ -82,7 +83,9 @@ export default function NewTicketScreen({ navigation }) {
         equipment_type: equipmentType,
         photo_base64: photo?.base64,
       });
-      navigation.goBack();
+      Alert.alert('Reporte enviado', 'Tu reporte se envió correctamente.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -99,7 +102,9 @@ export default function NewTicketScreen({ navigation }) {
         onChangeText={setTitle}
         placeholder="Ej. Fuga de agua en pasillo B"
         placeholderTextColor={colors.textMuted}
+        maxLength={50}
       />
+      <Text style={styles.counter}>{title.length}/50</Text>
 
       <Text style={styles.label}>Descripción de la falla</Text>
       <TextInput
@@ -108,8 +113,10 @@ export default function NewTicketScreen({ navigation }) {
         onChangeText={setBody}
         placeholder="Describe lo que observaste..."
         placeholderTextColor={colors.textMuted}
+        maxLength={150}
         multiline
       />
+      <Text style={styles.counter}>{body.length}/150</Text>
 
       <SelectField
         label="Edificio"
@@ -182,6 +189,7 @@ const styles = StyleSheet.create({
     fontSize: 15, borderWidth: 1, borderColor: colors.border,
   },
   textarea: { height: 100, textAlignVertical: 'top' },
+  counter: { color: colors.textMuted, fontSize: 11, textAlign: 'right', marginTop: 4 },
   preview: { width: '100%', height: 180, borderRadius: radius.sm, marginBottom: 6, backgroundColor: colors.white },
   previewPlaceholder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
   gpsBadge: { backgroundColor: colors.infoBg, borderRadius: radius.sm, padding: 8, marginTop: 4 },

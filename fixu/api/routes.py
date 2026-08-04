@@ -21,7 +21,7 @@ from ..models import (
     MaintenanceTask, ChecklistItem, PasswordResetToken,
 )
 from ..services.bridge_client import get_bridge_client
-from ..ticket_catalog import BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES, STATUS_AGENT_CHOICES, CANCELABLE_BY_REQUESTER
+from ..ticket_catalog import BUILDINGS, CLASSROOMS, EQUIPMENT_TYPES, STATUS_AGENT_CHOICES, STATUS_LABELS, CANCELABLE_BY_REQUESTER
 from ..rate_limiter import (
     rate_limit, get_redis, is_account_locked, register_failed_login,
     clear_failed_login, DUMMY_PASSWORD_HASH,
@@ -651,10 +651,10 @@ def mobile_create_ticket():
     classroom = (data.get('classroom') or '').strip()
     equipment_type = (data.get('equipment_type') or '').strip()
 
-    if not title or len(title) > 200:
-        return jsonify({'error': 'title es requerido (máx. 200 caracteres)'}), 400
-    if not body:
-        return jsonify({'error': 'body (descripción) es requerido'}), 400
+    if not title or len(title) > 50:
+        return jsonify({'error': 'title es requerido (máx. 50 caracteres)'}), 400
+    if not body or len(body) > 150:
+        return jsonify({'error': 'body (descripción) es requerido (máx. 150 caracteres)'}), 400
     if building not in BUILDINGS:
         return jsonify({'error': 'building es requerido y debe ser uno de los edificios disponibles'}), 400
     if classroom not in CLASSROOMS:
@@ -845,7 +845,10 @@ def mobile_update_ticket_status(ticket_id):
     if new_status == 'resolved' and ticket.status != 'resolved':
         ticket.resolved_at = datetime.utcnow()
     ticket.status = new_status
-    db.session.add(TicketEvent(ticket_id=ticket.id, user_id=user.id, body='Ticket actualizado (App Móvil)'))
+    db.session.add(TicketEvent(
+        ticket_id=ticket.id, user_id=user.id,
+        body=f'Estado actualizado a "{STATUS_LABELS[new_status]}" (App Móvil)',
+    ))
     db.session.commit()
     return jsonify({'id': ticket.id, 'status': ticket.status})
 

@@ -144,11 +144,14 @@
         function updateAgents() {
             const teamId = parseInt(teamSelect.value);
             agentSelect.innerHTML = '<option value="">-- Ninguno --</option>';
-            
-            if (!teamId) return;
 
-            const filteredMembers = allTeamMembers.filter(m => m.team_id === teamId);
-            
+            // Sin equipo seleccionado: mostrar TODOS los agentes disponibles
+            // (antes se dejaba el desplegable vacío, así que no se podía
+            // asignar un agente sin elegir primero un equipo).
+            const filteredMembers = teamId
+                ? allTeamMembers.filter(m => m.team_id === teamId)
+                : allTeamMembers;
+
             filteredMembers.forEach(member => {
                 const opt = document.createElement('option');
                 opt.value = member.id;

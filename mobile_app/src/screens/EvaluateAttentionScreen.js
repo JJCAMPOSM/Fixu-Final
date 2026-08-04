@@ -26,9 +26,15 @@ export default function EvaluateAttentionScreen({ route, navigation }) {
     setLoading(true);
     try {
       await submitFeedback(token, ticket.id, rating, comment.trim());
-      navigation.navigate('TicketDetail', {
-        ticket: { ...ticket, has_feedback: true, rating, comentario: comment.trim() || null },
+      // navigation.navigate('TicketDetail', ...) empujaba una pantalla nueva
+      // en vez de volver a la ya abierta: al presionar "atrás" desde ahí
+      // regresaba al formulario de evaluación en vez de salir del ticket.
+      // route.params.onSubmitted actualiza la pantalla anterior directamente
+      // y goBack() sí quita esta pantalla de la pila correctamente.
+      route.params.onSubmitted?.({
+        ...ticket, has_feedback: true, rating, comentario: comment.trim() || null,
       });
+      navigation.goBack();
     } catch (e) {
       setError(e.message);
     } finally {
