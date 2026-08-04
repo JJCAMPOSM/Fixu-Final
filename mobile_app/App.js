@@ -7,13 +7,10 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import TicketsScreen from './src/screens/TicketsScreen';
+import MainTabs from './src/navigation/MainTabs';
 import NewTicketScreen from './src/screens/NewTicketScreen';
 import TicketDetailScreen from './src/screens/TicketDetailScreen';
 import EvaluateAttentionScreen from './src/screens/EvaluateAttentionScreen';
-import NotificationsScreen from './src/screens/NotificationsScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import MaintenanceCalendarScreen from './src/screens/MaintenanceCalendarScreen';
@@ -41,13 +38,10 @@ function AuthStack() {
 function AppStack() {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Tickets" component={TicketsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
       <Stack.Screen name="NewTicket" component={NewTicketScreen} options={{ title: 'Nuevo reporte' }} />
       <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ title: 'Detalle del reporte' }} />
       <Stack.Screen name="EvaluateAttention" component={EvaluateAttentionScreen} options={{ title: 'Evaluar atención' }} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notificaciones' }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Configuración' }} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ title: 'Cambiar contraseña' }} />
       <Stack.Screen name="MaintenanceCalendar" component={MaintenanceCalendarScreen} options={{ title: 'Calendario de mantenimientos' }} />

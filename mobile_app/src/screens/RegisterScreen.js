@@ -8,6 +8,12 @@ import Card from '../components/Card';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const PASSWORD_RULES = [
+  { key: 'length', label: 'Al menos 8 caracteres', test: (pw) => pw.length >= 8 },
+  { key: 'letter', label: 'Al menos 1 letra', test: (pw) => /[a-zA-Z]/.test(pw) },
+  { key: 'number', label: 'Al menos 1 número', test: (pw) => /[0-9]/.test(pw) },
+];
+
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
   const [name, setName] = useState('');
@@ -22,7 +28,9 @@ export default function RegisterScreen({ navigation }) {
       return 'El nombre debe tener entre 2 y 120 caracteres.';
     }
     if (!EMAIL_REGEX.test(email.trim())) return 'Ingresa un correo válido.';
-    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (!PASSWORD_RULES.every((rule) => rule.test(password))) {
+      return 'La contraseña no cumple con los requisitos.';
+    }
     if (password !== confirmPassword) return 'Las contraseñas no coinciden.';
     return null;
   };
@@ -46,8 +54,7 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingTop: 40 }}>
-      <Text style={[typography.pageTitle, { textAlign: 'center' }]}>Crear cuenta</Text>
-      <Text style={styles.subtitle}>Regístrate para reportar fallas desde el campo</Text>
+      <Text style={[typography.pageTitle, { textAlign: 'center', marginBottom: 24 }]}>Crear cuenta</Text>
 
       <Card>
         <Text style={styles.label}>Nombre completo</Text>
@@ -66,6 +73,17 @@ export default function RegisterScreen({ navigation }) {
 
         <Text style={styles.label}>Contraseña</Text>
         <PasswordInput placeholder="Mínimo 8 caracteres" value={password} onChangeText={setPassword} />
+
+        <View style={styles.rulesList}>
+          {PASSWORD_RULES.map((rule) => {
+            const met = rule.test(password);
+            return (
+              <Text key={rule.key} style={[styles.ruleItem, met && styles.ruleItemMet]}>
+                {met ? '✓' : '•'} {rule.label}
+              </Text>
+            );
+          })}
+        </View>
 
         <Text style={styles.label}>Confirmar contraseña</Text>
         <PasswordInput placeholder="Repite tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} />
@@ -86,8 +104,10 @@ export default function RegisterScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.pageBg },
-  subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 24 },
   label: { color: colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 10 },
+  rulesList: { marginTop: 8 },
+  ruleItem: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+  ruleItemMet: { color: colors.success },
   input: {
     backgroundColor: colors.pageBg, color: colors.textPrimary, borderRadius: radius.sm, padding: 14,
     fontSize: 16, borderWidth: 1, borderColor: colors.border,

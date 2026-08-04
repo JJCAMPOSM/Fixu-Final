@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, typography, radius } from '../theme';
 import PasswordInput from '../components/PasswordInput';
@@ -41,11 +41,8 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.logoWrap}>
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoEmoji}>🔧</Text>
-        </View>
+        <Image source={require('../../assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
         <Text style={[typography.pageTitle, { fontSize: 26 }]}>FixU Móvil</Text>
-        <Text style={styles.subtitle}>Reporta fallas desde el sitio, con evidencia fotográfica</Text>
       </View>
 
       <Card>
@@ -83,12 +80,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.pageBg },
   logoWrap: { alignItems: 'center', marginBottom: 28 },
-  logoCircle: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accent,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
-  },
-  logoEmoji: { fontSize: 30 },
-  subtitle: { fontSize: 13, color: colors.textMuted, textAlign: 'center', marginTop: 4, paddingHorizontal: 20 },
+  logoImage: { width: 88, height: 88, marginBottom: 12 },
   label: { color: colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 10 },
   input: {
     backgroundColor: colors.pageBg, color: colors.textPrimary, borderRadius: radius.sm, padding: 14,
