@@ -74,11 +74,14 @@
             </div>
             {% endif %}
 
+            {% if mode == 'edit' %}
             <div class="mb-3">
                 <label class="form-label">{{ form.priority.label }}</label>
-                {{ form.priority(class='form-select', disabled=locked_edit) }}
+                {{ form.priority(class='form-select', disabled=agent_edit) }}
                 {% for e in form.priority.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                {% if agent_edit %}<div class="form-text">Solo el administrador puede editar la prioridad.</div>{% endif %}
             </div>
+            {% endif %}
 
             <div class="mt-4">
                 {{ form.submit(class='btn btn-primary') }}

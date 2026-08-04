@@ -92,6 +92,7 @@ def create():
     form.team_id.choices = [(0, '')]
     form.assignee_team_member_id.choices = [(0, '')]
     form.status.choices = [('pending', 'Pendiente')]
+    form.priority.choices = [('medium', 'Media')]
 
     if form.validate_on_submit():
         req = Requester.query.filter_by(email=current_user.email).first()
@@ -117,7 +118,7 @@ def create():
             team_id=None,
             assignee_team_member_id=None,
             status='pending',
-            priority=form.priority.data,
+            priority='medium',
             building=form.building.data,
             classroom=form.classroom.data,
             equipment_type=form.equipment_type.data,
@@ -232,6 +233,16 @@ def edit(ticket_id):
         # El agente solo puede cambiar el estado (y agregar observaciones vía
         # comentarios): no reasigna, no cambia el equipo/solicitante ni elimina.
         form.status.choices = STATUS_AGENT_CHOICES
+
+        # Estos campos no se muestran al agente, pero WTForms igual los valida
+        # en cada submit (pre_validate exige que .choices no sea None, sin
+        # importar si el campo es Optional() o si el navegador lo envió). Sin
+        # esto, form.validate_on_submit() explota con TypeError y el submit
+        # del agente siempre termina en 500, pase lo que pase en el estado.
+        form.requester_id.choices = [(ticket.requester_id, '')]
+        form.category_id.choices = [(ticket.category_id or 0, '')]
+        form.team_id.choices = [(ticket.team_id or 0, '')]
+        form.assignee_team_member_id.choices = [(ticket.assignee_team_member_id or 0, '')]
     else:
         form.status.choices = STATUS_ADMIN_CHOICES
 
@@ -283,9 +294,10 @@ def edit(ticket_id):
             flash('Ticket actualizado.', 'success')
             return redirect(url_for('tickets.show', ticket_id=ticket.id))
 
-        # El admin solo asigna equipo/agente: no reasigna solicitante/categoría,
-        # no edita el contenido del ticket (eso lo define el solicitante al
-        # crearlo) ni el estado (eso lo maneja el agente una vez asignado).
+        # El admin solo asigna equipo/agente y prioridad: no reasigna
+        # solicitante/categoría, no edita el contenido del ticket (eso lo
+        # define el solicitante al crearlo) ni el estado (eso lo maneja el
+        # agente una vez asignado).
         assignee_value = form.assignee_team_member_id.data or 0
         team_value = form.team_id.data or 0
         new_assignee = assignee_value if assignee_value != 0 else None
@@ -302,6 +314,7 @@ def edit(ticket_id):
         ticket.team_id = team_value if team_value != 0 else None
         ticket.assignee_team_member_id = new_assignee
         ticket.status = new_status
+        ticket.priority = form.priority.data
         db.session.add(TicketEvent(ticket_id=ticket.id, user_id=current_user.id, body='Ticket actualizado'))
         db.session.commit()
         flash('Ticket actualizado.', 'success')

@@ -37,7 +37,6 @@ def create():
         category = Category(
             name=form.name.data.strip(),
             description=form.description.data.strip() if form.description.data else None,
-            color=form.color.data.strip() if form.color.data else '#6366f1'
         )
         db.session.add(category)
         db.session.commit()
@@ -60,7 +59,6 @@ def edit(category_id):
     if form.validate_on_submit():
         category.name = form.name.data.strip()
         category.description = form.description.data.strip() if form.description.data else None
-        category.color = form.color.data.strip() if form.color.data else '#6366f1'
         db.session.commit()
         flash('Categoría actualizada con éxito.', 'success')
         return redirect(url_for('categories.index'))

@@ -20,11 +20,46 @@
                     {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">{{ form.phone.label }}</label>
-                    {{ form.phone(class='form-control', placeholder='(123) 456-7890') }}
+                    <label class="form-label required-field">{{ form.phone.label }}</label>
+                    {{ form.phone(class='form-control', required=True, placeholder='(123) 456-7890') }}
                     {% for e in form.phone.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label{{ ' required-field' if mode == 'create' }}">{{ form.password.label }}</label>
+                    {{ form.password(class='form-control', type='password', minlength=8, required=(mode == 'create'), placeholder='••••••••', id='password-requester') }}
+                    {% if mode == 'edit' %}
+                    <div class="form-text text-muted small">Dejar en blanco para mantener la contraseña actual</div>
+                    {% endif %}
+                    {% for e in form.password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="showPasswordRequester">
+                        <label class="form-check-label" for="showPasswordRequester">
+                            Mostrar contraseña
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label{{ ' required-field' if mode == 'create' }}">{{ form.password_confirm.label }}</label>
+                    {{ form.password_confirm(class='form-control', type='password', required=(mode == 'create'), placeholder='••••••••', id='password-confirm-requester') }}
+                    {% for e in form.password_confirm.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="showPasswordConfirmRequester">
+                        <label class="form-check-label" for="showPasswordConfirmRequester">
+                            Mostrar contraseña
+                        </label>
+                    </div>
+                </div>
             </div>
+
+            {% if mode == 'create' %}
+            <div class="alert alert-info mt-3 border-0" style="background: rgba(37, 99, 235, 0.1);">
+                <small>
+                    <strong>Nota:</strong> Además del perfil, se creará una cuenta de acceso con rol
+                    <strong>Solicitante</strong> con este correo y contraseña.
+                </small>
+            </div>
+            {% endif %}
+
             <div class="mt-4">
                 {{ form.submit(class='btn btn-primary') }}
                 <a href="{{ url_for('requesters.index') }}" class="btn btn-secondary">Cancelar</a>
@@ -32,4 +67,18 @@
         </form>
     </div>
 </div>
+<script>
+    const showPasswordRequester = document.getElementById('showPasswordRequester');
+    const passwordRequester = document.getElementById('password-requester');
+    const showPasswordConfirmRequester = document.getElementById('showPasswordConfirmRequester');
+    const passwordConfirmRequester = document.getElementById('password-confirm-requester');
+
+    showPasswordRequester.addEventListener('change', function () {
+        passwordRequester.type = this.checked ? 'text' : 'password';
+    });
+
+    showPasswordConfirmRequester.addEventListener('change', function () {
+        passwordConfirmRequester.type = this.checked ? 'text' : 'password';
+    });
+</script>
 {% endblock %}

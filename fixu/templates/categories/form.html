@@ -16,16 +16,6 @@
                     Técnico') }}
                     {% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label text-light">{{ form.color.label }}</label>
-                    <div class="input-group">
-                        {{ form.color(class='form-control', type='color', value=form.color.data or '#6366f1') }}
-                        <input type="text" class="form-control" id="color-text"
-                            value="{{ form.color.data or '#6366f1' }}" readonly style="max-width: 100px;">
-                    </div>
-                    <div class="form-text text-muted small">Selecciona un color para identificar esta categoría</div>
-                    {% for e in form.color.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
-                </div>
                 <div class="col-12">
                     <label class="form-label text-light">{{ form.description.label }}</label>
                     {{ form.description(class='form-control', rows=3, maxlength=500, placeholder='Descripción breve de
@@ -41,16 +31,4 @@
         </form>
     </div>
 </div>
-
-<script>
-    // Sincronizar el color picker con el text input
-    const colorInput = document.querySelector('input[name="color"]');
-    const colorText = document.getElementById('color-text');
-
-    if (colorInput && colorText) {
-        colorInput.addEventListener('input', function () {
-            colorText.value = this.value.toUpperCase();
-        });
-    }
-</script>
 {% endblock %}
