@@ -62,16 +62,10 @@
             </div>
 
             <div class="grid-2 mt-4" style="gap: 1.5rem;">
-                <!-- Solicitante -->
+                <!-- Solicitante (definido al crear el ticket, no editable) -->
                 <div class="form-group">
                     <label>Solicitante</label>
-                    <select name="requester_id" required>
-                        @foreach($requesters as $req)
-                            <option value="{{ $req->id }}" {{ (old('requester_id', $ticket->requester_id) == $req->id) ? 'selected' : '' }}>
-                                {{ $req->name }} ({{ $req->email }})
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="text" value="{{ $ticket->requester->name }} ({{ $ticket->requester->email }})" disabled>
                 </div>
 
                 <!-- Categoría -->

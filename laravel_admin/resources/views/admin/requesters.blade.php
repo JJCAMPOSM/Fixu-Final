@@ -20,7 +20,11 @@
                 </div>
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="text" name="phone" required placeholder="Ej. +52 555 123 4567">
+                    <input type="text" name="phone" id="requester-phone" required
+                        inputmode="numeric" pattern="[0-9]{7,20}" maxlength="20"
+                        placeholder="Ej. 5551234567"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <small style="color: #ef4444;">*Solamente números</small>
                 </div>
                 <div class="form-group">
                     <label>Contraseña</label>

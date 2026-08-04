@@ -71,9 +71,8 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:120|unique:categories',
             'description' => 'nullable|string',
-            'color' => 'nullable|string|max:7',
         ]);
-        Category::create($request->all());
+        Category::create($request->only(['name', 'description']) + ['color' => '#6366f1']);
         return redirect()->route('admin.categories.index')->with('success', 'Categoría creada exitosamente.');
     }
 
@@ -93,7 +92,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|max:255|unique:requesters,email|unique:users,email',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|digits_between:7,20',
             'password' => 'required|string|min:8',
         ]);
 
@@ -210,21 +209,21 @@ class AdminController extends Controller
 
     public function editTicket(\App\Models\Ticket $ticket)
     {
-        $requesters = Requester::orderBy('name')->get();
         $categories = Category::orderBy('name')->get();
         $teams = Team::orderBy('name')->get();
         // Todos los miembros de equipo para filtrar con JS
         $allTeamMembers = \App\Models\TeamMember::with(['user', 'team'])->get();
-        
-        return view('admin.tickets_edit', compact('ticket', 'requesters', 'categories', 'teams', 'allTeamMembers'));
+
+        return view('admin.tickets_edit', compact('ticket', 'categories', 'teams', 'allTeamMembers'));
     }
 
     public function updateTicket(Request $request, \App\Models\Ticket $ticket)
     {
+        // El solicitante no es editable desde aquí: lo define quien crea el
+        // ticket, no el admin.
         $request->validate([
             'title' => 'required|string|max:200',
             'body' => 'required|string',
-            'requester_id' => 'required|exists:requesters,id',
             'category_id' => 'nullable|exists:categories,id',
             'team_id' => 'nullable|exists:teams,id',
             'assignee_team_member_id' => 'nullable|exists:team_members,id',
@@ -246,7 +245,6 @@ class AdminController extends Controller
         $ticket->update([
             'title' => $request->title,
             'body' => $request->body,
-            'requester_id' => $request->requester_id,
             'category_id' => $request->category_id ?: null,
             'team_id' => $request->team_id ?: null,
             'assignee_team_member_id' => $assigneeId,

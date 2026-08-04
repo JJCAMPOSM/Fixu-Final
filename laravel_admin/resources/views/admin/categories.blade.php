@@ -18,10 +18,6 @@
                     <label>Descripción</label>
                     <textarea name="description" rows="3" placeholder="Descripción breve..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Color (Hex)</label>
-                    <input type="text" name="color" placeholder="Ej. #ff0000" value="#6366f1">
-                </div>
                 <button type="submit" class="btn btn-primary">Guardar Categoría</button>
             </form>
         </div>

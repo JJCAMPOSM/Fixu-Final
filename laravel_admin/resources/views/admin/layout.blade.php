@@ -1,3 +1,10 @@
+@php
+    // Nginx reenvía /admin/* completo al contenedor de Laravel, pero Apache
+    // sirve public/ en la raíz: asset('img/logo.png') generaba una URL sin
+    // el prefijo /admin que ningún backend resuelve (imagen rota). En vez de
+    // depender de esa ruta, se embebe el logo directo como data URI.
+    $logoDataUri = 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('img/logo.png')));
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -344,7 +351,7 @@
     
     <div class="mobile-header">
         <div class="brand">
-            <img src="{{ asset('img/logo.png') }}" alt="Fixu" style="height: 32px; object-fit: contain;">
+            <img src="{{ $logoDataUri }}" alt="Fixu" style="height: 32px; object-fit: contain;">
             <span style="font-size: 1.1rem; color: var(--text-muted); font-weight: 500;">Admin</span>
         </div>
         <div class="flex items-center gap-4">
@@ -360,7 +367,7 @@
 
     <aside class="sidebar" id="sidebar">
         <div class="brand" style="gap: 0.6rem; margin-bottom: 2rem;">
-            <img src="{{ asset('img/logo.png') }}" alt="Fixu" style="height: 38px; object-fit: contain;">
+            <img src="{{ $logoDataUri }}" alt="Fixu" style="height: 38px; object-fit: contain;">
             <span style="font-size: 1.2rem; color: var(--text-muted); font-weight: 500; align-self: flex-end; padding-bottom: 3px;">Admin</span>
         </div>
         <ul class="nav-links" style="padding-top: 1rem;">
