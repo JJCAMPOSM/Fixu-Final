@@ -4,7 +4,7 @@ y las opciones mostradas en los formularios sean siempre las mismas."""
 
 BUILDINGS = ['Edificio A', 'Edificio B', 'Edificio C', 'Edificio D', 'Biblioteca']
 CLASSROOMS = ['Aula 101', 'Aula 102', 'Aula 203', 'Aula 204', 'Laboratorio 1']
-EQUIPMENT_TYPES = ['Proyector', 'Computadora', 'Impresora', 'Aire acondicionado', 'Pizarrón electrónico']
+EQUIPMENT_TYPES = ['Proyector', 'Computadora']
 
 # Flujo de estados de un ticket (ver rúbrica del proyecto):
 #   Pendiente -> Asignado (automático al asignar agente) -> En proceso / En espera / Cancelado / Resuelto
