@@ -20,7 +20,11 @@
                 </div>
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="text" name="phone" placeholder="Ej. +52 555 123 4567">
+                    <input type="text" name="phone" required placeholder="Ej. +52 555 123 4567">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required minlength="8" placeholder="Mínimo 8 caracteres">
                 </div>
                 <button type="submit" class="btn btn-primary">Guardar Solicitante</button>
             </form>

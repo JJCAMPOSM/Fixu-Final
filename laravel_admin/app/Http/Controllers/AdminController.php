@@ -92,10 +92,24 @@ class AdminController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:120',
-            'email' => 'required|email|max:255|unique:requesters',
-            'phone' => 'nullable|string|max:20',
+            'email' => 'required|email|max:255|unique:requesters,email|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'password' => 'required|string|min:8',
         ]);
-        Requester::create($request->all());
+
+        Requester::create($request->only(['name', 'email', 'phone']));
+
+        // Además del perfil, crea la cuenta de acceso (rol solicitante) con la
+        // que esta persona podrá loguearse en la web; sin esto, el solicitante
+        // quedaba registrado pero no tenía forma de iniciar sesión.
+        $user = new User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->role = 'requester';
+        // Compatibility with Flask's bcrypt checking
+        $user->password_hash = password_hash($request->password, PASSWORD_BCRYPT);
+        $user->save();
+
         return redirect()->route('admin.requesters.index')->with('success', 'Solicitante creado exitosamente.');
     }
 
