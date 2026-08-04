@@ -27,7 +27,6 @@
                 <thead>
                     <tr>
                         <th>Categoría</th>
-                        <th>Color</th>
                         <th style="text-align: right;">Acciones</th>
                     </tr>
                 </thead>
@@ -37,9 +36,6 @@
                         <td style="font-weight: 500;">
                             {{ $category->name }}
                             <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">{{ $category->description }}</div>
-                        </td>
-                        <td>
-                            <div style="width: 20px; height: 20px; border-radius: 4px; background: {{ $category->color }};"></div>
                         </td>
                         <td style="text-align: right;">
                             <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" onsubmit="return confirm('¿Eliminar esta categoría?');">
@@ -51,7 +47,7 @@
                     </tr>
                     @endforeach
                     @if($categories->isEmpty())
-                        <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No hay categorías</td></tr>
+                        <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">No hay categorías</td></tr>
                     @endif
                 </tbody>
             </table>
